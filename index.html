@@ -260,6 +260,8 @@ body { margin: 0; }
     DB.cases.forEach(function (c) {
       ['notes', 'docs', 'deadlines', 'payments', 'expenses', 'sessions'].forEach(function (k) { if (!Array.isArray(c[k])) c[k] = []; });
       if (!c.intake) c.intake = { facts: '', wants: '', sensitive: '', opp: '' };
+      if (c.branch !== 'کیفری') c.branch = 'حقوقی';
+      if (typeof c.crime !== 'string') c.crime = '';
       if (!Array.isArray(c.claims)) {
         c.claims = [];
         if (c.claimType || c.claimValue || c.claimKind) {
@@ -270,6 +272,7 @@ body { margin: 0; }
     });
   }
   if (!DB || !DB.cases) DB = seed();
+  if (!DB.limit || DB.limit < 1) DB.limit = 300000;
   normalize();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { storageOK = false; } }
   save();
@@ -382,18 +385,65 @@ body { margin: 0; }
     var intl = d.charAt(0) === '+' ? d.slice(1) : (d.charAt(0) === '0' ? '98' + d.slice(1) : d);
     return '<a class="btn sm" href="tel:' + esc(d) + '">تماس</a><a class="btn sm" href="sms:' + esc(d) + '">پیامک</a><a class="btn sm" href="https://wa.me/' + esc(intl.replace(/\D/g, '')) + '">واتساپ</a>';
   }
+  /* ---------- راهنمای اعتراض ---------- */
+  var CRIME = [
+    ['', 'انتخاب کنید'],
+    ['t8', 'تعزیری درجه ۸'],
+    ['dl', 'دیه یا ارش کمتر از یک‌دهم دیه کامل'],
+    ['t47', 'تعزیری درجه ۴ تا ۷'],
+    ['dm', 'دیه یا ارش یک‌دهم دیه کامل یا بیشتر - غیر از موارد فرجامی'],
+    ['t13', 'تعزیری درجه ۱ تا ۳، یا سلب حیات، قطع عضو، حبس ابد'],
+    ['dh', 'جنایت عمدی علیه تمامیت جسمانی با دیه نصف دیه کامل یا بیشتر'],
+    ['pol', 'جرم سیاسی یا مطبوعاتی'],
+    ['oth', 'سایر موارد - حد، قصاص و غیره']
+  ];
+  function appealFor(kind, value, title) {
+    var lim = DB.limit || 300000, a, f, ay = null;
+    if (kind === 'غیرمالی') { a = 'همه احکام دعاوی غیرمالی قابل تجدیدنظر است - ماده ۳۳۱ بند ب.'; ay = true; }
+    else if (!value) a = 'ارزش خواسته را وارد کنید تا بررسی شود.';
+    else if (value > lim) { a = 'ارزش بیش از ' + money(lim) + ' تومان است و حکم قابل تجدیدنظر است - ماده ۳۳۱ بند الف.'; ay = true; }
+    else { a = 'ارزش تا ' + money(lim) + ' تومان است و مشمول بند الف ماده ۳۳۱ نیست؛ حکم نخستین معمولاً قطعی است.'; ay = false; }
+    var fy = /طلاق|نکاح|نسب|حجر|وقف/.test(title || '');
+    f = fy ? 'رأی تجدیدنظر استان می‌تواند قابل فرجام باشد - ماده ۳۶۸ بند الف، با استثناهای ماده ۳۶۹.' : 'در متن ماده ۳۶۸ برای این نوع خواسته فرجام پیش‌بینی نشده است، مگر در موارد خاص دیگر که باید جداگانه بررسی شود.';
+    return { a: a, ay: ay, f: f, fy: fy };
+  }
+  function crimeFor(code) {
+    var r = {
+      t8: { a: 'قطعی است - ماده ۴۲۷ بند الف.', ay: false, f: 'فرجام ندارد.', fy: false },
+      dl: { a: 'قطعی است - ماده ۴۲۷ بند ب.', ay: false, f: 'فرجام ندارد.', fy: false },
+      t47: { a: 'قطعی نیست و در دادگاه تجدیدنظر استان قابل تجدیدنظر است - ماده ۴۲۷.', ay: true, f: 'فرجام در دیوان عالی برای این گروه در ماده ۴۲۸ پیش‌بینی نشده است.', fy: false },
+      dm: { a: 'قطعی نیست و قابل تجدیدنظر است - ماده ۴۲۷.', ay: true, f: 'فرجام در دیوان عالی برای این گروه در ماده ۴۲۸ پیش‌بینی نشده است.', fy: false },
+      t13: { a: 'قطعی نیست - ماده ۴۲۷؛ ترتیب تجدیدنظر و فرجام را با مرجع صادرکننده و رویه تطبیق دهید.', ay: true, f: 'قابل فرجام‌خواهی در دیوان عالی کشور است - ماده ۴۲۸.', fy: true },
+      dh: { a: 'قطعی نیست - ماده ۴۲۷؛ ترتیب تجدیدنظر و فرجام را با مرجع صادرکننده و رویه تطبیق دهید.', ay: true, f: 'قابل فرجام‌خواهی در دیوان عالی کشور است - ماده ۴۲۸.', fy: true },
+      pol: { a: 'قطعی نیست - ماده ۴۲۷؛ ترتیب تجدیدنظر و فرجام را با مرجع صادرکننده و رویه تطبیق دهید.', ay: true, f: 'قابل فرجام‌خواهی در دیوان عالی کشور است - ماده ۴۲۸.', fy: true },
+      oth: { a: 'این گروه در راهنما بررسی نشده است؛ مواد ۴۲۷ تا ۴۲۹ را با نوع جرم تطبیق دهید.', ay: null, f: '', fy: null }
+    };
+    return r[code] || null;
+  }
+  function dlBtn(id, label) { return '<button class="btn sm" data-act="gotodl" data-r="' + id + '">' + label + '</button>'; }
   function appealCardHtml(c) {
-    if (!c.claims.length) return '';
+    if (c.branch === 'کیفری') {
+      var cr = crimeFor(c.crime);
+      var h = '<section class="card stack"><h2 style="margin:0">راهنمای اعتراض به رأی - کیفری</h2>';
+      h += '<label class="field"><span>نوع جرم یا مجازات رأی</span><select id="f-crime" data-f="crime">' + CRIME.map(function (o) { return '<option value="' + o[0] + '"' + (c.crime === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
+      if (cr) h += '<div class="item static"><span class="s">تجدیدنظر: ' + cr.a + (cr.f ? '<br>فرجام: ' + cr.f : '') + '</span></div>';
+      else h += '<p class="muted" style="margin:0">نوع جرم یا مجازات را انتخاب کنید تا قابلیت اعتراض نشان داده شود.</p>';
+      h += '<div class="item static"><span class="t">رأی غیابی</span><span class="s">در تمام جرایم، به جز جرایمی که فقط جنبه حق‌اللهی دارند، اگر متهم یا وکیل او در هیچ جلسه‌ای حاضر نشود و لایحه ندهد، رأی غیابی است. رأی محکومیت ظرف ۲۰ روز از ابلاغ واقعی، و برای مقیم خارج ۲ ماه، در همان دادگاه قابل واخواهی است. اگر ابلاغ واقعی نشده، ۲۰ روز از تاریخ اطلاع - ماده ۴۰۶.</span></div>';
+      h += '<div class="btns">' + dlBtn('crim_wakh', 'ثبت مهلت واخواهی') + dlBtn('crim_tajdid', 'ثبت مهلت تجدیدنظر یا فرجام') + '</div>';
+      return h + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز و برای مقیم خارج ۲ ماه از ابلاغ رأی یا انقضای مهلت واخواهی است - ماده ۴۳۱. در مجازات‌های جایگزین حبس، معیار مجازات قانونی اولیه است - تبصره ۱ ماده ۴۲۷. این راهنما بر اساس متن آ.د.ک ارسالی شماست؛ اصلاحات بعدی، قرارها و جرایم خاص را جداگانه بررسی کنید.</p></section>';
+    }
+    var any = false, fany = false;
     var rows = c.claims.map(function (x) {
-      var a, f;
-      if (x.kind === 'غیرمالی') a = 'همه احکام دعاوی غیرمالی قابل تجدیدنظر است - ماده ۳۳۱ بند ب.';
-      else if (!x.value) a = 'ارزش خواسته را وارد کنید تا بررسی شود.';
-      else if (x.value > 300000) a = 'ارزش بیش از ۳ میلیون ریال است و حکم قابل تجدیدنظر است - ماده ۳۳۱ بند الف.';
-      else a = 'ارزش تا ۳ میلیون ریال است و مشمول بند الف ماده ۳۳۱ نیست؛ حکم نخستین معمولاً قطعی است.';
-      f = /طلاق|نکاح|نسب|حجر|وقف/.test(x.title) ? 'رأی تجدیدنظر استان می‌تواند قابل فرجام باشد - ماده ۳۶۸ بند الف، با استثناهای ماده ۳۶۹.' : 'در متن ماده ۳۶۸ برای این نوع خواسته فرجام پیش‌بینی نشده است.';
-      return '<div class="item static"><span class="t">' + esc(x.title) + '</span><span class="pill ' + (x.kind === 'مالی' ? 'acc' : '') + '">' + x.kind + '</span><span class="s">تجدیدنظر: ' + a + '<br>فرجام: ' + f + '</span></div>';
+      var r = appealFor(x.kind, x.value, x.title);
+      if (r.ay) any = true; if (r.fy) fany = true;
+      return '<div class="item static"><span class="t">' + esc(x.title) + '</span><span class="pill ' + (x.kind === 'مالی' ? 'acc' : '') + '">' + x.kind + '</span><span class="s">تجدیدنظر: ' + r.a + '<br>فرجام: ' + r.f + '</span></div>';
     }).join('');
-    return '<section class="card"><h2>راهنمای اعتراض به رأی</h2>' + rows + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز از ابلاغ است و برای مقیم خارج از کشور ۲ ماه - مواد ۳۳۶ و ۳۹۷. این راهنما فقط برای دعاوی مدنی و بر اساس متن آ.د.م است که فرستادید؛ قرارها، متفرعات دعوا، چند خواسته در یک دادخواست و اصلاحات تازه را جداگانه بررسی کنید.</p></section>';
+    var h2 = '<section class="card stack"><h2 style="margin:0">راهنمای اعتراض به رأی</h2>';
+    if (!c.claims.length) h2 += '<p class="muted" style="margin:0">اول خواسته‌ها را ثبت کنید تا قابلیت تجدیدنظر و فرجام نشان داده شود. اگر پرونده کیفری است، نوع پرونده را در بالا «کیفری» بگذارید.</p>';
+    h2 += rows;
+    h2 += '<div class="item static"><span class="t">اگر رأی غیابی است</span><span class="s">رأی وقتی غیابی است که خوانده یا وکیل او در هیچ جلسه‌ای حاضر نشده و لایحه نداده، یا اخطاریه ابلاغ واقعی نشده باشد - ماده ۳۰۳. واخواهی در همان دادگاه، ۲۰ روز از ابلاغ واقعی و برای مقیم خارج ۲ ماه است - ماده ۳۰۶. با عذر موجه مندرج در همان ماده، بعد از مهلت هم ممکن است. بدون عذر، فقط تجدیدنظر طبق مقررات آن مرحله ممکن است - تبصره ۳. اگر ابلاغ واقعی نشده و محکوم‌علیه مدعی بی‌اطلاعی باشد، می‌تواند واخواهی کند - ماده ۳۰۶.</span></div>';
+    h2 += '<div class="btns">' + dlBtn('civ_wakh', 'ثبت مهلت واخواهی') + (any || !c.claims.length ? dlBtn('civ_tajdid', 'ثبت مهلت تجدیدنظر') : '') + (fany ? dlBtn('civ_farjam', 'ثبت مهلت فرجام') : '') + '</div>';
+    return h2 + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز از ابلاغ است و برای مقیم خارج از کشور ۲ ماه - مواد ۳۳۶ و ۳۹۷. این راهنما فقط برای دعاوی مدنی و بر اساس متن آ.د.م است که فرستادید؛ قرارها، متفرعات دعوا، چند خواسته در یک دادخواست و اصلاحات تازه را جداگانه بررسی کنید. نصاب تجدیدنظر در بخش «بیشتر» قابل تغییر است.</p></section>';
   }
   function summaryData(c) {
     var S = [], t = today(), put = function (h, l) { l = l.filter(function (x) { return x[1] !== '' && x[1] != null; }); if (l.length) S.push({ h: h, l: l }); };
@@ -435,6 +485,7 @@ body { margin: 0; }
       '<label class="field"><span>عنوان خواسته</span><input type="text" id="cl-title" data-k="title" list="cl-list" autocomplete="off"></label></div><datalist id="cl-list"></datalist>' +
       '<div class="two" id="cl-fin"><label class="field"><span>موضوع خواسته</span><select id="cl-subject" data-k="subject">' + opts(SUBJ) + '</select></label>' + field('cl-val', 'ارزش خواسته - تومان', '', 'data-k="value" class="ltr" inputmode="numeric"') + '</div>' +
       '<div id="cl-prop" hidden class="stack"><div class="two">' + field('cl-plaque', 'پلاک ثبتی', '', 'data-k="plaque" class="ltr"') + field('cl-area', 'مساحت - متر مربع', '', 'data-k="area" class="ltr" inputmode="numeric"') + '</div>' + field('cl-addr', 'آدرس ملک', '', 'data-k="addr"') + '<label class="field"><span>نوع سند</span><select id="cl-doc" data-k="doc">' + opts(DOCT) + '</select></label></div>' +
+      '<div id="cl-hint" class="muted" style="font-size:13px"></div>' +
       '<div class="btns"><button class="btn primary" data-act="add" data-l="claims">افزودن خواسته</button></div></div>';
     if (c.claims.length) {
       h += '<div>' + c.claims.map(function (x) {
@@ -451,6 +502,11 @@ body { margin: 0; }
     var fin = k.value === 'مالی', sj = document.getElementById('cl-subject').value;
     document.getElementById('cl-fin').hidden = !fin;
     document.getElementById('cl-prop').hidden = !(fin && PROPS.indexOf(sj) >= 0);
+    var hint = document.getElementById('cl-hint');
+    if (hint) {
+      var tt = (document.getElementById('cl-title') || {}).value || '', vv = parseNum((document.getElementById('cl-val') || {}).value), rr = appealFor(k.value, fin ? vv : 0, tt);
+      hint.innerHTML = '<b>راهنمای اعتراض:</b> تجدیدنظر - ' + rr.a + ' فرجام - ' + rr.f;
+    }
     document.getElementById('cl-list').innerHTML = (CLAIMS[k.value] || []).map(function (o) { return '<option value="' + esc(o) + '">'; }).join('');
   }
   var SUBS = [['info', 'اطلاعات'], ['notes', 'اظهارات'], ['docs', 'مدارک'], ['dl', 'مهلت‌ها'], ['sess', 'جلسات'], ['money', 'مالی']];
@@ -463,6 +519,7 @@ body { margin: 0; }
         '<div class="two">' + field('f-phone', 'تلفن موکل', c.phone, 'data-f="phone" class="ltr" inputmode="tel"') + field('f-opp', 'طرف مقابل', c.opponent, 'data-f="opponent"') + '</div>' + '<div class="btns" id="call-links">' + callLinks(c.phone) + '</div>' +
         '<div class="two">' + field('f-no', 'شماره پرونده', c.caseNo, 'data-f="caseNo"') + field('f-arch', 'شماره بایگانی', c.archiveNo, 'data-f="archiveNo"') + '</div>' +
         field('f-court', 'مرجع و شعبه', c.court, 'data-f="court"') +
+        '<div class="two"><label class="field"><span>نوع پرونده</span><select id="f-branch" data-f="branch">' + opts(['حقوقی', 'کیفری'], c.branch) + '</select></label></div>' +
         '<div class="two"><label class="field"><span>وضعیت</span><select id="f-status" data-f="status">' + opts(STATUS, c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + '</div></section>';
       h += claimsCardHtml(c) + appealCardHtml(c);
       h += '<section class="card stack"><h2 style="margin:0">پذیرش موکل</h2>' +
@@ -507,6 +564,7 @@ body { margin: 0; }
       '<section class="card stack"><h2 style="margin:0">پشتیبان‌گیری</h2><p class="muted" style="margin:0">داده‌ها فقط روی همین دستگاه و همین مرورگر ذخیره می‌شوند. با پاک‌کردن اطلاعات مرورگر یا تعویض گوشی از بین می‌روند، پس هر چند وقت یک‌بار پشتیبان بگیرید.' + (DB.lastBackup ? ' آخرین پشتیبان: ' + fa(new Date(DB.lastBackup).toLocaleDateString('fa-IR')) + '.' : '') + '</p>' +
       '<div class="btns"><button class="btn primary" data-act="export">گرفتن پشتیبان</button></div><textarea class="big" id="bk-out" readonly hidden aria-label="متن پشتیبان"></textarea></section>' +
       '<section class="card stack"><h2 style="margin:0">بازیابی</h2><p class="muted" style="margin:0">فایل پشتیبان را انتخاب کنید یا متن آن را اینجا بچسبانید. بازیابی، اطلاعات فعلی را جایگزین می‌کند.</p><label class="field"><span>فایل پشتیبان</span><input type="file" id="bk-file" accept=".json,application/json"></label><label class="field"><span>یا متن پشتیبان</span><textarea class="big" id="bk-in"></textarea></label><div class="btns">' + (ui.confirm === 'imp' ? '<button class="btn danger" data-act="doimport">تأیید جایگزینی</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn" data-act="import">بازیابی از متن</button>') + '</div></section>' +
+      '<section class="card stack"><h2 style="margin:0">نصاب تجدیدنظر</h2><p class="muted" style="margin:0">طبق ماده ۳۳۱ در متن آ.د.م ارسالی شما، دعاوی مالی با خواسته بیش از سه میلیون ریال، یعنی ۳۰۰٬۰۰۰ تومان، قابل تجدیدنظر است. اگر این مبلغ در قانون جاری تغییر کرده، اینجا اصلاح کنید تا راهنمای اعتراض بر همان اساس کار کند.</p>' + field('lim', 'نصاب - تومان', money(DB.limit), 'data-limit class="ltr" inputmode="numeric"') + '</section>' +
       '<section class="card stack"><h2 style="margin:0">حریم خصوصی</h2><p class="muted" style="margin:0">اطلاعات موکلین جایی ارسال نمی‌شود. با این حال هر کس به این دستگاه یا فایل پشتیبان دسترسی داشته باشد آن‌ها را می‌بیند؛ از قفل گوشی استفاده کنید و فایل پشتیبان را امن نگه دارید.</p></section>' +
       '<section class="card stack"><h2 style="margin:0">پاک‌کردن همه</h2><div class="btns">' + (ui.confirm === 'wipe' ? '<button class="btn danger" data-act="dowipe">تأیید - همه پرونده‌ها پاک شود</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn danger" data-act="wipe">پاک‌کردن همه اطلاعات</button>') + '</div></section>' +
       '<p class="muted">مهلت‌ها با متن آ.د.م، آ.د.ک و قانون اجرای احکام مدنی تطبیق داده شده است. قانون صدور چک از منبع وب است. این برنامه جایگزین بررسی وکیل نیست.</p></div>';
@@ -520,6 +578,7 @@ body { margin: 0; }
     else v = viewMore();
     var tabs = [['today', 'امروز'], ['cases', 'پرونده‌ها'], ['calc', 'مهلت‌یاب'], ['more', 'بیشتر']];
     app.innerHTML = '<div id="view">' + v + '</div><nav class="bar" aria-label="بخش‌ها"><div class="in">' + tabs.map(function (t) { return '<button data-act="tab" data-t="' + t[0] + '"' + (ui.tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div></nav>';
+    if (ui.preRule) { var pr = document.getElementById('cd-rule'); if (pr) { pr.value = ui.preRule; } ui.preRule = ''; }
     ['calc', 'cd'].forEach(updatePrev);
     updateClaimForm();
   }
@@ -544,6 +603,7 @@ body { margin: 0; }
     else if (a === 'opensess') go('cases', b.getAttribute('data-id'), 'sess');
     else if (a === 'back') go('cases');
     else if (a === 'sub') { ui.sub = b.getAttribute('data-s'); ui.confirm = ''; render(); }
+    else if (a === 'gotodl') { ui.sub = 'dl'; ui.preRule = b.getAttribute('data-r'); ui.confirm = ''; render(); window.scrollTo(0, 0); }
     else if (a === 'newcase') { var n = blankCase(); DB.cases.unshift(n); save(); go('cases', n.id, 'info'); }
     else if (a === 'askdel') { ui.confirm = 'del'; render(); }
     else if (a === 'cancel') { ui.confirm = ''; render(); }
@@ -609,9 +669,11 @@ body { margin: 0; }
   app.addEventListener('input', function (e) {
     var el = e.target, c = ui.caseId && cById(ui.caseId);
     if (el.hasAttribute && (el.hasAttribute('data-date') || el.hasAttribute('data-time'))) { var nv = el.hasAttribute('data-date') ? fmtDateInput(el.value) : fmtTimeInput(el.value); if (nv !== el.value) el.value = nv; }
+    if (el.id === 'cl-title' || el.id === 'cl-val') updateClaimForm();
     if (el.id === 'q') { ui.q = el.value; document.getElementById('caseList').innerHTML = caseListHtml(); return; }
-    if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
+    if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-branch' || el.id === 'f-crime') { render(); return; } if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
     else if (el.hasAttribute('data-in') && c) { c.intake[el.getAttribute('data-in')] = el.value; save(); }
+    else if (el.hasAttribute('data-limit')) { var nl = parseNum(el.value); if (nl > 0) { DB.limit = nl; save(); } }
     else if (el.hasAttribute('data-fee') && c) { c.fee = parseNum(el.value); save(); var kv = document.getElementById('kv'); if (kv) kv.innerHTML = kvHtml(c); }
     var f = el.closest('[data-form]'); if (f && (f.getAttribute('data-form') === 'calc' || f.getAttribute('data-form') === 'cd')) updatePrev(f.getAttribute('data-form'));
   });
