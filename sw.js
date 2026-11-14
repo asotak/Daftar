@@ -1,5 +1,5 @@
 /* برای هر نسخه‌ی جدید، عدد VERSION را یکی زیاد کنید */
-var VERSION = 'v1';
+var VERSION = 'v3';
 var CACHE = 'daftar-' + VERSION;
 var FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 self.addEventListener('install', function (e) {
