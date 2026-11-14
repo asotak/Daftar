@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f4a8a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفتر پرونده‌ها</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap">
+<style>
+/* Layout: تک‌ستونه برای گوشی، نوار پایین برای چهار بخش اصلی؛ روی صفحه بزرگ ستون وسط */
+:root {
+  --bg: #F3F5F8; --surface: #FFFFFF; --surface2: #E7ECF2; --ink: #16202C; --muted: #566473; --line: #D2DAE3;
+  --accent: #24508F; --accent-ink: #FFFFFF; --accent-soft: #DCE6F5;
+  --ok: #1E7B4F; --ok-soft: #D9F0E4; --warn: #8F530C; --warn-soft: #F8EBD3; --bad: #B3261E; --bad-soft: #F9DEDB;
+  --font: 'Vazirmatn', Tahoma, 'Segoe UI', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F151C; --surface: #17202A; --surface2: #202C38; --ink: #E6EDF3; --muted: #9BAAB8; --line: #2B3A48;
+    --accent: #7FA8E8; --accent-ink: #0B1B33; --accent-soft: #1C2F4D;
+    --ok: #62CF9A; --ok-soft: #173A2A; --warn: #E8B56B; --warn-soft: #3A2B15; --bad: #FF8F86; --bad-soft: #43201D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F151C; --surface: #17202A; --surface2: #202C38; --ink: #E6EDF3; --muted: #9BAAB8; --line: #2B3A48;
+  --accent: #7FA8E8; --accent-ink: #0B1B33; --accent-soft: #1C2F4D;
+  --ok: #62CF9A; --ok-soft: #173A2A; --warn: #E8B56B; --warn-soft: #3A2B15; --bad: #FF8F86; --bad-soft: #43201D;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.7; direction: rtl; }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 14px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.5; text-wrap: balance; }
+h2 { font-size: 16px; font-weight: 800; margin: 0 0 8px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.date { color: var(--muted); font-size: 13.5px; }
+.stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.muted { color: var(--muted); font-size: 13px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.field > span { font-size: 13px; color: var(--muted); }
+input[type=text], select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; }
+textarea { min-height: 84px; resize: vertical; line-height: 1.8; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ltr { direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+.btn { font: inherit; font-weight: 600; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; cursor: pointer; min-height: 42px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); }
+.btn.sm { min-height: 34px; padding: 4px 10px; font-size: 13px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-block; border-radius: 99px; padding: 1px 10px; font-size: 12.5px; font-weight: 600; background: var(--surface2); color: var(--muted); white-space: nowrap; }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.acc { background: var(--accent-soft); color: var(--accent); }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.item:first-child { border-top: 0; }
+.item.static { cursor: default; }
+.item .t { font-weight: 600; }
+.item .s { color: var(--muted); font-size: 13px; grid-column: 1 / -1; line-height: 1.7; }
+.sub { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sub button { font: inherit; font-size: 13.5px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 6px 2px; cursor: pointer; white-space: nowrap; min-width: 0; }
+.sub button[aria-selected=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+nav.bar { position: fixed; inset: auto 0 0 0; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: center; padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); z-index: 5; }
+nav.bar .in { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; max-width: 720px; }
+nav.bar button { font: inherit; background: none; border: 0; color: var(--muted); padding: 12px 4px 10px; cursor: pointer; min-height: 52px; font-size: 14px; border-top: 3px solid transparent; }
+nav.bar button[aria-current=page] { color: var(--accent); font-weight: 800; border-top-color: var(--accent); }
+.res { border-radius: 10px; padding: 12px 14px; background: var(--accent-soft); }
+.res .big { font-size: 19px; font-weight: 800; color: var(--accent); }
+.alert { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; line-height: 1.8; }
+.alert.bad { background: var(--bad-soft); color: var(--bad); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 14.5px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; text-align: left; }
+.kv .tot { font-weight: 800; }
+.toast { position: fixed; inset: auto 0 calc(66px + env(safe-area-inset-bottom, 0px)) 0; margin: 0 auto; width: fit-content; max-width: 90%; background: var(--ink); color: var(--bg); border-radius: 99px; padding: 7px 18px; font-size: 14px; z-index: 9; }
+textarea.big { min-height: 150px; direction: ltr; text-align: left; font-family: ui-monospace, monospace; font-size: 12px; }
+.empty { color: var(--muted); padding: 14px 0; text-align: center; font-size: 14px; }
+.stat { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+.chk { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.chk input { accent-color: var(--accent); width: 18px; height: 18px; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+@media print {
+  :root, :root:not([data-theme="light"]), :root[data-theme="dark"] { --ink: #000 !important; --muted: #333 !important; --line: #999 !important; --surface: #fff !important; --bg: #fff !important; --accent: #000 !important; color-scheme: light !important; }
+  nav.bar, .noprint, .toast { display: none !important; }
+  .wrap { padding: 0; max-width: none; }
+  .card { border: 0; padding: 0; }
+  body { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+body { margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app" dir="rtl" lang="fa"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+/* تبدیل تاریخ شمسی و میلادی و محاسبه مهلت */
+(function (root) {
+  'use strict';
+  function div(a, b) { return ~~(a / b); }
+  function mod(a, b) { return a - ~~(a / b) * b; }
+  var breaks = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+  function jalCal(jy) {
+    var bl = breaks.length, gy = jy + 621, leapJ = -14, jp = breaks[0], jm, jump = 0, leap, leapG, march, n, i;
+    for (i = 1; i < bl; i += 1) {
+      jm = breaks[i]; jump = jm - jp;
+      if (jy < jm) break;
+      leapJ = leapJ + div(jump, 33) * 8 + div(mod(jump, 33), 4);
+      jp = jm;
+    }
+    n = jy - jp;
+    leapJ = leapJ + div(n, 33) * 8 + div(mod(n, 33) + 3, 4);
+    if (mod(jump, 33) === 4 && jump - n === 4) leapJ += 1;
+    leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150;
+    march = 20 + leapJ - leapG;
+    if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33;
+    leap = mod(mod(n + 1, 33) - 1, 4);
+    if (leap === -1) leap = 4;
+    return { leap: leap, gy: gy, march: march };
+  }
+  function g2d(gy, gm, gd) {
+    var d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * mod(gm + 9, 12) + 2, 5) + gd - 34840408;
+    d = d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752;
+    return d;
+  }
+  function d2g(jdn) {
+    var j = 4 * jdn + 139361631;
+    j = j + div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
+    var i = div(mod(j, 1461), 4) * 5 + 308;
+    var gd = div(mod(i, 153), 5) + 1, gm = mod(div(i, 153), 12) + 1, gy = div(j, 1461) - 100100 + div(8 - gm, 6);
+    return { gy: gy, gm: gm, gd: gd };
+  }
+  function j2d(jy, jm, jd) {
+    var r = jalCal(jy);
+    return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
+  }
+  function d2j(jdn) {
+    var gy = d2g(jdn).gy, jy = gy - 621, r = jalCal(jy), jdn1f = g2d(gy, 3, r.march), jm, jd, k;
+    k = jdn - jdn1f;
+    if (k >= 0) {
+      if (k <= 185) { jm = 1 + div(k, 31); jd = mod(k, 31) + 1; return { jy: jy, jm: jm, jd: jd }; }
+      k -= 186;
+    } else {
+      jy -= 1; k += 179;
+      if (r.leap === 1) k += 1;
+    }
+    jm = 7 + div(k, 30); jd = mod(k, 30) + 1;
+    return { jy: jy, jm: jm, jd: jd };
+  }
+  function monthLen(jy, jm) { return jm <= 6 ? 31 : jm <= 11 ? 30 : j2d(jy + 1, 1, 1) - j2d(jy, 12, 1); }
+  function valid(jy, jm, jd) { return jy >= 1300 && jy <= 1600 && jm >= 1 && jm <= 12 && jd >= 1 && jd <= monthLen(jy, jm); }
+  var DIG = '۰۱۲۳۴۵۶۷۸۹';
+  function parse(s) {
+    s = String(s || '').replace(/[۰-۹]/g, function (d) { return DIG.indexOf(d); }).replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); });
+    var m = s.trim().match(/^(\d{4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})$/);
+    if (!m) return null;
+    var y = +m[1], mo = +m[2], d = +m[3];
+    if (!valid(y, mo, d)) return null;
+    return j2d(y, mo, d);
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function fmt(jdn) { var j = d2j(jdn); return j.jy + '/' + pad(j.jm) + '/' + pad(j.jd); }
+  var MN = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  var WN = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+  /* شنبه = ۰ */
+  function weekday(jdn) { return mod(jdn + 2, 7); }
+  function long(jdn) { var j = d2j(jdn); return WN[weekday(jdn)] + ' ' + j.jd + ' ' + MN[j.jm - 1] + ' ' + j.jy; }
+  function addMonths(jdn, n) {
+    var j = d2j(jdn), t = (j.jy * 12 + (j.jm - 1)) + n, jy = div(t, 12), jm = mod(t, 12) + 1;
+    return j2d(jy, jm, Math.min(j.jd, monthLen(jy, jm)));
+  }
+  function today() { var d = new Date(); return g2d(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  var api = { j2d: j2d, d2j: d2j, g2d: g2d, d2g: d2g, parse: parse, fmt: fmt, long: long, weekday: weekday, addMonths: addMonths, today: today, monthLen: monthLen, MN: MN, WN: WN, valid: valid };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.SDate = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var D = window.SDate;
+  var KEY = 'daftar-parvandeh-v1';
+  var DIG = '۰۱۲۳۴۵۶۷۸۹';
+  var fa = function (s) { return String(s).replace(/\d/g, function (d) { return DIG[d]; }); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var money = function (n) { return Math.round(n || 0).toLocaleString('fa-IR'); };
+  var parseNum = function (s) {
+    s = String(s || '').replace(/[۰-۹]/g, function (d) { return DIG.indexOf(d); }).replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }).replace(/[^\d]/g, '');
+    return s ? parseInt(s, 10) : 0;
+  };
+  var uid = function () { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); };
+  var today = function () { return D.today(); };
+  var dstr = function (j) { return fa(D.fmt(j)); };
+
+  /* ---------- مهلت‌ها ---------- */
+  var VER_OFFICIAL = 'تطبیق با متن رسمی';
+  var RULES = [
+    { id: 'civ_wakh', g: 'مدنی', t: 'واخواهی از رأی غیابی', from: 'ابلاغ واقعی رأی', inn: { d: 20 }, out: { d: 60 }, ref: 'ماده ۳۰۶ آ.د.م', shift: true, ver: VER_OFFICIAL, note: 'با عذر موجه مندرج در همین ماده، بعد از مهلت هم قابل طرح است.' },
+    { id: 'civ_tajdid', g: 'مدنی', t: 'تجدیدنظرخواهی', from: 'ابلاغ رأی، یا انقضای مهلت واخواهی در رأی غیابی', inn: { d: 20 }, out: { d: 60 }, ref: 'ماده ۳۳۶ آ.د.م', shift: true, ver: VER_OFFICIAL },
+    { id: 'civ_farjam', g: 'مدنی', t: 'فرجام‌خواهی', from: 'ابلاغ رأی تجدیدنظر استان؛ یا انقضای مهلت تجدیدنظر در رأی نخستین که تجدیدنظر نشده', inn: { d: 20 }, out: { d: 60 }, ref: 'مواد ۳۹۷ و ۳۹۸ آ.د.م', shift: true, ver: VER_OFFICIAL, note: 'فرجام فقط در موارد مقرر ماده ۳۶۸ ممکن است.' },
+    { id: 'civ_ehadeh', g: 'مدنی', t: 'اعاده دادرسی', from: 'ابلاغ رأی حضوری قطعی؛ در رأی غیابی انقضای مهلت واخواهی و تجدیدنظر', inn: { d: 20 }, out: { d: 60 }, ref: 'ماده ۴۲۷ آ.د.م', shift: true, ver: VER_OFFICIAL, note: 'مبدأ مهلت در موارد جعل، تقلب، اسناد مکتوم و تعارض دو حکم فرق دارد - مواد ۴۲۸ تا ۴۳۰.' },
+    { id: 'crim_wakh', g: 'کیفری', t: 'واخواهی از رأی غیابی', from: 'ابلاغ واقعی رأی', inn: { d: 20 }, out: { m: 2 }, ref: 'ماده ۴۰۶ آ.د.ک', ver: VER_OFFICIAL, note: 'اگر رأی ابلاغ واقعی نشده، ۲۰ روز از تاریخ اطلاع - تبصره ۲ ماده ۴۰۶. حقاللهی محض غیابی نمی‌شود.' },
+    { id: 'crim_tajdid', g: 'کیفری', t: 'تجدیدنظر یا فرجام', from: 'ابلاغ رأی، یا انقضای مهلت واخواهی', inn: { d: 20 }, out: { m: 2 }, ref: 'ماده ۴۳۱ آ.د.ک', ver: VER_OFFICIAL, note: 'درخواست دیرتر با عذر موجه - ماده ۴۳۲ و ۱۷۸.' },
+    { id: 'crim_ostan', g: 'کیفری', t: 'واخواهی از رأی تجدیدنظر استان', from: 'ابلاغ واقعی به متهم یا وکیل', inn: { d: 20 }, ref: 'ماده ۴۶۱ آ.د.ک', ver: VER_OFFICIAL, note: 'فقط وقتی رأی محکومیت است و متهم یا وکیل در هیچ‌یک از مراحل حاضر نبوده و لایحه نداده. رأی این مرحله قطعی است.' },
+    { id: 'exec', g: 'اجرا', t: 'مهلت اجرای مفاد اجراییه', from: 'ابلاغ اجراییه به محکوم‌علیه', inn: { d: 10 }, ref: 'ماده ۳۴ قانون اجرای احکام مدنی', ver: VER_OFFICIAL, note: 'پایان مهلت یعنی محکوم‌علیه باید حکم را اجرا کند یا ترتیب پرداخت بدهد.' },
+    { id: 'chq_present', g: 'چک', t: 'مهلت ارائه چک به بانک', from: 'تاریخ صدور چک', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع وب - متن قانون صدور چک در فایل‌ها نبود', note: 'ماه شمسی حساب شده؛ اگر مرجع ۳۰ روزه حساب کند ممکن است چند روز فرق کند.' },
+    { id: 'chq_compl', g: 'چک', t: 'مهلت شکایت کیفری چک', from: 'تاریخ گواهی عدم پرداخت', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع وب - متن قانون صدور چک در فایل‌ها نبود', note: 'ماه شمسی حساب شده؛ احتیاطاً چند روز زودتر اقدام کنید.' },
+    { id: 'custom', g: 'دلخواه', t: 'مهلت دلخواه', from: 'تاریخ شروع', ref: '', ver: '', custom: true }
+  ];
+  var RULE = function (id) { for (var i = 0; i < RULES.length; i++) if (RULES[i].id === id) return RULES[i]; return RULES[RULES.length - 1]; };
+  function calcRule(rule, start, res, customDays) {
+    var spec = rule.custom ? { d: customDays } : (res === 'out' && rule.out ? rule.out : rule.inn);
+    var raw = spec.m ? D.addMonths(start, spec.m) : start + spec.d, end = raw, shifted = false;
+    var fri = D.weekday(raw) === 6;
+    if (fri && rule.shift) { end = raw + 1; shifted = true; }
+    return { raw: raw, end: end, shifted: shifted, fri: fri, spec: spec };
+  }
+  var STATUS = ['مشاوره', 'تنظیم دادخواست', 'دادرسی نخستین', 'تجدیدنظر', 'فرجام', 'اجرای حکم', 'مختومه'];
+  var DOCK = ['اصل', 'کپی', 'تصویر', 'رسید', 'سایر'];
+  var DOCS = ['دریافت‌شده', 'ناقص', 'درخواست‌شده', 'ارائه‌شده به دادگاه'];
+  var KINDS = ['مالی', 'غیرمالی'];
+  var CLAIMS = {
+    'مالی': ['مطالبه وجه', 'مطالبه وجه چک', 'مطالبه وجه سفته', 'مطالبه مهریه', 'مطالبه نفقه', 'مطالبه جهیزیه', 'مطالبه اجرت‌المثل', 'مطالبه خسارت', 'خسارت تصادف', 'تقسیم ترکه', 'الزام به تنظیم سند رسمی', 'خلع ید', 'رفع تصرف عدوانی', 'تخلیه', 'افراز', 'اثبات مالکیت', 'ابطال سند', 'فسخ قرارداد'],
+    'غیرمالی': ['طلاق', 'فسخ نکاح', 'حضانت', 'ملاقات طفل', 'تمکین', 'اثبات نسب', 'رجوع']
+  };
+  var SUBJ = ['وجه نقد', 'زمین', 'ساختمان', 'زمین و ساختمان', 'خودرو', 'سایر مال'];
+  var PROPS = ['زمین', 'ساختمان', 'زمین و ساختمان'];
+  var DOCT = ['سند رسمی', 'قولنامه یا سند عادی', 'وکالتی', 'سایر'];
+  var NOTEK = ['اظهارات موکل', 'جلسه دادگاه', 'تماس', 'یادداشت'];
+
+  /* ---------- ذخیره‌سازی ---------- */
+  var storageOK = true;
+  function load() { try { var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch (e) { storageOK = false; return null; } }
+  var DB = load();
+  function blankCase() { return { id: uid(), created: Date.now(), title: '', phone: '', opponent: '', caseNo: '', archiveNo: '', court: '', claims: [], sessions: [], status: STATUS[0], vakalat: '', intake: { facts: '', wants: '', sensitive: '', opp: '' }, notes: [], docs: [], deadlines: [], fee: 0, payments: [], expenses: [] }; }
+  function seed() {
+    var c = blankCase(), t = today();
+    c.sample = true; c.title = 'نمونه - آقای الف'; c.opponent = 'آقای ب'; c.caseNo = '۰۰۰۰۰۰۰'; c.archiveNo = '۰۰۰/۰۰'; c.court = 'شعبه نمونه دادگاه عمومی حقوقی'; c.claims.push({ id: uid(), kind: 'مالی', title: 'مطالبه وجه سفته', subject: 'وجه نقد', value: 500000000, prop: null }); c.sessions.push({ id: uid(), date: t + 9, time: '۰۹:۳۰', place: 'شعبه نمونه', note: 'جلسه نمونه', done: false }); c.status = STATUS[2];
+    c.intake.facts = 'این یک پرونده نمونه است تا شکل برنامه را ببینید. بعد از آشنایی آن را حذف کنید.';
+    c.notes.push({ id: uid(), date: t - 2, kind: NOTEK[0], text: 'نمونه اظهارات موکل در جلسه مشاوره.' });
+    c.docs.push({ id: uid(), name: 'تصویر سفته', kind: DOCK[2], status: DOCS[0], where: 'پوشه موکل' });
+    var r = RULE('civ_tajdid'), cr = calcRule(r, t - 5, 'in', 0);
+    c.deadlines.push({ id: uid(), title: r.t, ruleId: r.id, start: t - 5, end: cr.end, ref: r.ref, ver: r.ver, note: '', done: false });
+    c.fee = 20000000; c.payments.push({ id: uid(), date: t - 6, amount: 8000000, note: 'پیش‌پرداخت' });
+    return { cases: [c], lastBackup: 0 };
+  }
+  function normalize() {
+    DB.cases.forEach(function (c) {
+      ['notes', 'docs', 'deadlines', 'payments', 'expenses', 'sessions'].forEach(function (k) { if (!Array.isArray(c[k])) c[k] = []; });
+      if (!c.intake) c.intake = { facts: '', wants: '', sensitive: '', opp: '' };
+      if (!Array.isArray(c.claims)) {
+        c.claims = [];
+        if (c.claimType || c.claimValue || c.claimKind) {
+          var fin = c.claimKind !== 'غیرمالی';
+          c.claims.push({ id: uid(), kind: fin ? 'مالی' : 'غیرمالی', title: c.claimType || '', subject: fin ? 'وجه نقد' : 'غیرمالی', value: fin ? parseNum(c.claimValue) : 0, prop: null });
+        }
+      }
+    });
+  }
+  if (!DB || !DB.cases) DB = seed();
+  normalize();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { storageOK = false; } }
+  save();
+  var cById = function (id) { for (var i = 0; i < DB.cases.length; i++) if (DB.cases[i].id === id) return DB.cases[i]; return null; };
+
+  /* ---------- وضعیت رابط ---------- */
+  var ui = { tab: 'today', caseId: null, sub: 'info', q: '', confirm: '', sumMoney: true, sumNotes: false };
+  var app = document.getElementById('app'), toastEl = document.getElementById('toast'), toastT;
+  function toast(m) { toastEl.textContent = m; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { toastEl.hidden = true; }, 2600); }
+  var left = function (j) { return j - today(); };
+  function pill(end) {
+    var d = left(end);
+    if (d < 0) return '<span class="pill bad">' + fa(-d) + ' روز گذشته</span>';
+    if (d === 0) return '<span class="pill bad">امروز</span>';
+    return '<span class="pill ' + (d <= 3 ? 'bad' : d <= 10 ? 'warn' : 'ok') + '">' + fa(d) + ' روز مانده</span>';
+  }
+  var field = function (id, label, val, extra) { return '<label class="field"><span>' + label + '</span><input type="text" id="' + id + '" value="' + esc(val) + '" ' + (extra || '') + ' autocomplete="off"></label>'; };
+  var opts = function (list, sel) { return list.map(function (o) { return '<option' + (o === sel ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join(''); };
+  var claimsText = function (c) { return c.claims.map(function (x) { return x.title; }).filter(Boolean).join('، '); };
+  var allSessions = function () { var a = [], t = today(); DB.cases.forEach(function (c) { c.sessions.forEach(function (x) { if (!x.done && x.date >= t) a.push({ c: c, s: x }); }); }); a.sort(function (x, y) { return x.s.date - y.s.date; }); return a; };
+  var allDeadlines = function () { var a = []; DB.cases.forEach(function (c) { c.deadlines.forEach(function (d) { if (!d.done) a.push({ c: c, d: d }); }); }); a.sort(function (x, y) { return x.d.end - y.d.end; }); return a; };
+
+  /* ---------- نماها ---------- */
+  function viewToday() {
+    var t = today(), a = allDeadlines(), over = a.filter(function (x) { return x.d.end < t; }).length, w7 = a.filter(function (x) { return x.d.end >= t && x.d.end <= t + 7; }).length;
+    var active = DB.cases.filter(function (c) { return c.status !== 'مختومه'; }).length;
+    var h = '<div class="top"><h1>امروز</h1><span class="date">' + fa(D.long(t)) + '</span></div><div class="stack">';
+    var real = DB.cases.some(function (c) { return !c.sample; });
+    if (!storageOK) h += '<div class="alert bad">ذخیره‌سازی در این مرورگر کار نمی‌کند و داده‌ها با بستن صفحه از بین می‌روند. صفحه را در حالت عادی مرورگر باز کنید.</div>';
+    if (real && (!DB.lastBackup || Date.now() - DB.lastBackup > 14 * 864e5)) h += '<div class="alert">' + (DB.lastBackup ? 'بیش از دو هفته از آخرین پشتیبان‌گیری گذشته است.' : 'هنوز پشتیبان‌گیری نکرده‌اید.') + ' از بخش «بیشتر» یک فایل پشتیبان بگیرید.</div>';
+    h += '<div class="stat"><div><b>' + fa(over) + '</b><span>مهلت گذشته</span></div><div><b>' + fa(w7) + '</b><span>تا ۷ روز آینده</span></div><div><b>' + fa(active) + '</b><span>پرونده فعال</span></div></div>';
+    var ss = allSessions();
+    h += '<section class="card"><h2>جلسات پیش‌رو</h2>';
+    if (!ss.length) h += '<div class="empty">جلسه‌ای ثبت نشده است. از تب «جلسات» هر پرونده اضافه کنید.</div>';
+    ss.slice(0, 15).forEach(function (x) {
+      h += '<div class="item" tabindex="0" data-act="opensess" data-id="' + x.c.id + '"><span class="t">' + fa(D.long(x.s.date)) + (x.s.time ? ' - ساعت ' + fa(x.s.time) : '') + '</span>' + pill(x.s.date) +
+        '<span class="s">' + esc(x.c.title || 'بدون نام') + (x.s.place ? ' - ' + esc(x.s.place) : '') + (x.s.note ? ' - ' + esc(x.s.note) : '') + '</span></div>';
+    });
+    h += '</section><section class="card"><h2>مهلت‌های باز</h2>';
+    if (!a.length) h += '<div class="empty">مهلت بازی ثبت نشده است. از بخش «مهلت‌یاب» یا داخل هر پرونده اضافه کنید.</div>';
+    a.slice(0, 40).forEach(function (x) {
+      h += '<div class="item" tabindex="0" data-act="opendl" data-id="' + x.c.id + '"><span class="t">' + esc(x.d.title) + '</span>' + pill(x.d.end) +
+        '<span class="s">' + esc(x.c.title || 'بدون نام') + ' - پایان ' + dstr(x.d.end) + ' ' + D.WN[D.weekday(x.d.end)] + '</span></div>';
+    });
+    return h + '</section></div>';
+  }
+  function caseListHtml() {
+    var q = ui.q.trim(), list = DB.cases.filter(function (c) { return !q || [c.title, c.opponent, c.caseNo, c.archiveNo, claimsText(c), c.court].join(' ').indexOf(q) >= 0; });
+    if (!list.length) return '<div class="empty">' + (q ? 'موردی پیدا نشد.' : 'هنوز پرونده‌ای نیست.') + '</div>';
+    return list.map(function (c) {
+      var nx = c.deadlines.filter(function (d) { return !d.done; }).sort(function (a, b) { return a.end - b.end; })[0];
+      return '<div class="item" tabindex="0" data-act="open" data-id="' + c.id + '"><span class="t">' + esc(c.title || 'بدون نام') + (c.sample ? ' <span class="pill acc">نمونه</span>' : '') + '</span>' + (nx ? pill(nx.end) : '<span class="pill">' + esc(c.status) + '</span>') +
+        '<span class="s">' + esc([claimsText(c), c.court, c.caseNo && ('پرونده ' + c.caseNo)].filter(Boolean).join(' - ')) + '</span></div>';
+    }).join('');
+  }
+  function viewCases() {
+    return '<div class="top"><h1>پرونده‌ها</h1><button class="btn primary" data-act="newcase">پرونده جدید</button></div><div class="stack"><label class="field"><span>جستجو در نام موکل، شماره پرونده، خواسته</span><input type="text" id="q" value="' + esc(ui.q) + '" autocomplete="off"></label><section class="card" id="caseList">' + caseListHtml() + '</section></div>';
+  }
+  function dlFormHtml(p, withCase) {
+    var g = '', last = '';
+    RULES.forEach(function (r) { if (r.g !== last) { if (last) g += '</optgroup>'; g += '<optgroup label="' + r.g + '">'; last = r.g; } g += '<option value="' + r.id + '">' + esc(r.t) + '</option>'; });
+    g += '</optgroup>';
+    var h = '<div class="stack" data-form="' + p + '">';
+    if (withCase) h += '<label class="field"><span>پرونده</span><select id="' + p + '-case" data-k="case"><option value="">بدون ثبت در پرونده - فقط محاسبه</option>' + DB.cases.map(function (c) { return '<option value="' + c.id + '">' + esc(c.title || 'بدون نام') + '</option>'; }).join('') + '</select></label>';
+    h += '<div class="two"><label class="field"><span>نوع مهلت</span><select id="' + p + '-rule" data-k="rule">' + g + '</select></label>' +
+      '<label class="field"><span id="' + p + '-fromlbl">تاریخ</span><input type="text" id="' + p + '-start" data-k="start" class="ltr" inputmode="numeric" value="' + dstr(today()) + '" autocomplete="off"></label></div>' +
+      '<div class="two"><label class="field" id="' + p + '-reswrap"><span>محل اقامت</span><select id="' + p + '-res" data-k="res"><option value="in">ساکن ایران</option><option value="out">ساکن خارج از کشور</option></select></label>' +
+      '<div id="' + p + '-cust" hidden class="two" style="grid-column:1/-1"><label class="field"><span>عنوان</span><input type="text" id="' + p + '-ctitle" data-k="ctitle" autocomplete="off"></label><label class="field"><span>تعداد روز</span><input type="text" id="' + p + '-cdays" data-k="cdays" inputmode="numeric" class="ltr" value="' + fa(20) + '" autocomplete="off"></label></div></div>' +
+      '<div id="' + p + '-prev"></div>' +
+      '<label class="field"><span>یادداشت - اختیاری</span><input type="text" id="' + p + '-note" data-k="note" autocomplete="off"></label>' +
+      '<div class="btns"><button class="btn primary" data-act="adddl" data-p="' + p + '">' + (withCase ? 'ثبت مهلت' : 'ثبت مهلت در این پرونده') + '</button></div></div>';
+    return h;
+  }
+  function readDl(p) {
+    var root = app.querySelector('[data-form="' + p + '"]'), g = function (k) { var e = root.querySelector('[data-k="' + k + '"]'); return e ? e.value : ''; };
+    var rule = RULE(g('rule')), start = D.parse(g('start'));
+    if (start == null) return { err: 'تاریخ را به شکل ۱۴۰۵/۰۸/۲۲ بنویسید.' };
+    var days = parseNum(g('cdays'));
+    if (rule.custom && (!days || days > 3650)) return { err: 'تعداد روز را درست بنویسید.' };
+    var r = calcRule(rule, start, g('res'), days);
+    return { rule: rule, start: start, r: r, res: g('res'), note: g('note'), ctitle: g('ctitle'), caseId: g('case') };
+  }
+  function updatePrev(p) {
+    var root = app.querySelector('[data-form="' + p + '"]'); if (!root) return;
+    var rule = RULE(root.querySelector('[data-k="rule"]').value);
+    document.getElementById(p + '-fromlbl').textContent = rule.from;
+    document.getElementById(p + '-reswrap').hidden = !(rule.out);
+    document.getElementById(p + '-cust').hidden = !rule.custom;
+    var x = readDl(p), box = document.getElementById(p + '-prev');
+    if (x.err) { box.innerHTML = '<div class="muted">' + x.err + '</div>'; return; }
+    var r = x.r, rl = x.rule, h = '<div class="res"><div class="muted">آخرین روز مهلت</div><div class="big">' + fa(D.long(r.end)) + '</div><div>' + pill(r.end) + '</div>';
+    h += '<div class="muted" style="margin-top:6px">' + (rl.ref ? esc(rl.ref) + ' - ' : '') + 'روز مبدأ حساب نمی‌شود. مبدأ: ' + dstr(x.start) + '</div></div>';
+    if (r.shifted) h += '<div class="alert" style="margin-top:6px">آخرین روز مهلت ' + fa(D.long(r.raw)) + ' بود که جمعه است؛ طبق ماده ۴۴۴ آ.د.م به اولین روز اداری بعد منتقل شد. اگر روز تعطیل رسمی دیگری در کار است، دستی بررسی کنید.</div>';
+    else if (r.fri) h += '<div class="alert" style="margin-top:6px">آخرین روز مهلت جمعه است. برای این مهلت، قاعده انتقال از متن‌ها تأیید نشده؛ برای اطمینان یک روز زودتر اقدام کنید.</div>';
+    if (rl.note) h += '<div class="muted" style="margin-top:6px">' + esc(rl.note) + '</div>';
+    if (rl.ver) h += '<div style="margin-top:6px"><span class="pill ' + (rl.ver === VER_OFFICIAL ? 'ok' : 'warn') + '">' + esc(rl.ver) + '</span></div>';
+    box.innerHTML = h;
+  }
+  function viewCalc() {
+    return '<div class="top"><h1>مهلت‌یاب</h1></div><div class="stack"><section class="card"><p class="muted" style="margin-top:0">نوع مهلت و تاریخ مبدأ را بدهید تا آخرین روز و روزهای مانده را ببینید. می‌توانید نتیجه را در یک پرونده ثبت کنید.</p>' + dlFormHtml('calc', true) + '</section><div class="alert">ابزار ماه مدنی را ۳۰ روز می‌گیرد - ماده ۴۴۳ آ.د.م - و روز ابلاغ را حساب نمی‌کند - ماده ۴۴۵. تعطیلات رسمی غیر از جمعه در ابزار نیست؛ پیش از اتکا، تعطیلات آن روزها را بررسی کنید.</div></div>';
+  }
+  function kvHtml(c) {
+    var paid = c.payments.reduce(function (s, x) { return s + x.amount; }, 0), exL = 0, exC = 0;
+    c.expenses.forEach(function (x) { if (x.who === 'موکل') exC += x.amount; else exL += x.amount; });
+    return '<dt>دریافت‌شده</dt><dd>' + money(paid) + '</dd><dt class="tot">مانده حق‌الوکاله</dt><dd class="tot">' + money(c.fee - paid) + '</dd><dt>هزینه‌های پرداخت‌شده توسط وکیل</dt><dd>' + money(exL) + '</dd><dt>هزینه‌های موکل</dt><dd>' + money(exC) + '</dd>';
+  }
+  function callLinks(phone) {
+    var d = String(phone || '').replace(/[۰-۹]/g, function (x) { return DIG.indexOf(x); }).replace(/[^\d+]/g, '');
+    if (d.replace(/\D/g, '').length < 7) return '';
+    var intl = d.charAt(0) === '+' ? d.slice(1) : (d.charAt(0) === '0' ? '98' + d.slice(1) : d);
+    return '<a class="btn sm" href="tel:' + esc(d) + '">تماس</a><a class="btn sm" href="sms:' + esc(d) + '">پیامک</a><a class="btn sm" href="https://wa.me/' + esc(intl.replace(/\D/g, '')) + '">واتساپ</a>';
+  }
+  function appealCardHtml(c) {
+    if (!c.claims.length) return '';
+    var rows = c.claims.map(function (x) {
+      var a, f;
+      if (x.kind === 'غیرمالی') a = 'همه احکام دعاوی غیرمالی قابل تجدیدنظر است - ماده ۳۳۱ بند ب.';
+      else if (!x.value) a = 'ارزش خواسته را وارد کنید تا بررسی شود.';
+      else if (x.value > 300000) a = 'ارزش بیش از ۳ میلیون ریال است و حکم قابل تجدیدنظر است - ماده ۳۳۱ بند الف.';
+      else a = 'ارزش تا ۳ میلیون ریال است و مشمول بند الف ماده ۳۳۱ نیست؛ حکم نخستین معمولاً قطعی است.';
+      f = /طلاق|نکاح|نسب|حجر|وقف/.test(x.title) ? 'رأی تجدیدنظر استان می‌تواند قابل فرجام باشد - ماده ۳۶۸ بند الف، با استثناهای ماده ۳۶۹.' : 'در متن ماده ۳۶۸ برای این نوع خواسته فرجام پیش‌بینی نشده است.';
+      return '<div class="item static"><span class="t">' + esc(x.title) + '</span><span class="pill ' + (x.kind === 'مالی' ? 'acc' : '') + '">' + x.kind + '</span><span class="s">تجدیدنظر: ' + a + '<br>فرجام: ' + f + '</span></div>';
+    }).join('');
+    return '<section class="card"><h2>راهنمای اعتراض به رأی</h2>' + rows + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز از ابلاغ است و برای مقیم خارج از کشور ۲ ماه - مواد ۳۳۶ و ۳۹۷. این راهنما فقط برای دعاوی مدنی و بر اساس متن آ.د.م است که فرستادید؛ قرارها، متفرعات دعوا، چند خواسته در یک دادخواست و اصلاحات تازه را جداگانه بررسی کنید.</p></section>';
+  }
+  function summaryData(c) {
+    var S = [], t = today(), put = function (h, l) { l = l.filter(function (x) { return x[1] !== '' && x[1] != null; }); if (l.length) S.push({ h: h, l: l }); };
+    put('مشخصات پرونده', [['موکل', c.title], ['طرف مقابل', c.opponent], ['شماره پرونده', c.caseNo], ['شماره بایگانی', c.archiveNo], ['مرجع و شعبه', c.court], ['وضعیت', c.status], ['تاریخ وکالت‌نامه', c.vakalat]]);
+    var tot = 0;
+    put('خواسته‌ها', c.claims.map(function (x) {
+      if (x.kind === 'مالی') tot += x.value || 0;
+      var d = [x.kind, x.kind === 'مالی' ? x.subject : '', x.kind === 'مالی' && x.value ? money(x.value) + ' تومان' : '', x.prop && x.prop.plaque ? 'پلاک ' + x.prop.plaque : '', x.prop && x.prop.area ? fa(x.prop.area) + ' متر' : ''].filter(Boolean).join(' - ');
+      return [x.title, d];
+    }).concat(tot ? [['جمع ارزش خواسته‌های مالی', money(tot) + ' تومان']] : []));
+    put('جلسات پیش‌رو', c.sessions.filter(function (x) { return !x.done && x.date >= t; }).sort(function (a, b) { return a.date - b.date; }).map(function (x) { return [fa(D.long(x.date)) + (x.time ? ' - ساعت ' + fa(x.time) : ''), [x.place, x.note].filter(Boolean).join(' - ')]; }));
+    put('مهلت‌های باز', c.deadlines.filter(function (x) { return !x.done; }).sort(function (a, b) { return a.end - b.end; }).map(function (x) { return [x.title, 'پایان ' + fa(D.long(x.end))]; }));
+    if (ui.sumMoney) {
+      var paid = c.payments.reduce(function (a, x) { return a + x.amount; }, 0);
+      put('حق‌الوکاله - تومان', c.fee ? [['مبلغ توافق‌شده', money(c.fee)], ['دریافت‌شده', money(paid)], ['مانده', money(c.fee - paid)]] : []);
+    }
+    if (ui.sumNotes) put('اظهارات و یادداشت‌ها', c.notes.slice().sort(function (a, b) { return a.date - b.date; }).map(function (n) { return [n.kind + ' - ' + dstr(n.date), n.text]; }));
+    return S;
+  }
+  function viewSummary(c) {
+    var S = summaryData(c);
+    var h = '<div class="top noprint"><button class="btn sm" data-act="sumback">بازگشت به پرونده</button></div><div class="stack">' +
+      '<section class="card noprint stack"><h2 style="margin:0">خلاصه پرونده برای چاپ یا ارسال</h2><label class="chk"><input type="checkbox" id="sum-money"' + (ui.sumMoney ? ' checked' : '') + '><span>شامل حق‌الوکاله</span></label><label class="chk"><input type="checkbox" id="sum-notes"' + (ui.sumNotes ? ' checked' : '') + '><span>شامل اظهارات و یادداشت‌ها</span></label>' +
+      '<p class="muted" style="margin:0">نکات حساس و اطلاعات پذیرش در خلاصه نمی‌آید.</p><div class="btns"><button class="btn primary" data-act="doprint">چاپ یا ذخیره PDF</button><button class="btn" data-act="copysum">کپی متن</button></div><textarea class="big" id="sum-text" readonly hidden aria-label="متن خلاصه"></textarea></section>' +
+      '<section class="card printarea"><h1>' + esc(c.title || 'پرونده') + '</h1><div class="muted">تاریخ تنظیم - ' + fa(D.long(today())) + '</div>';
+    S.forEach(function (x) { h += '<h2 style="margin:14px 0 6px">' + x.h + '</h2><dl class="kv">' + x.l.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd style="white-space:pre-wrap;text-align:right">' + esc(r[1]) + '</dd>'; }).join('') + '</dl>'; });
+    return h + '</section></div>';
+  }
+  function summaryText(c) {
+    var out = [(c.title || 'پرونده') + ' - ' + fa(D.long(today()))];
+    summaryData(c).forEach(function (x) { out.push('', x.h); x.l.forEach(function (r) { out.push('- ' + r[0] + ': ' + r[1]); }); });
+    return out.join('\n');
+  }
+  function claimsCardHtml(c) {
+    var tot = 0, any = false;
+    c.claims.forEach(function (x) { if (x.kind === 'مالی') { tot += x.value || 0; any = true; } });
+    var h = '<section class="card stack"><h2 style="margin:0">خواسته‌ها</h2><p class="muted" style="margin:0">هر خواسته را جدا ثبت کنید. مالی یعنی دارای ارزش پولی و غیرمالی مثل طلاق و حضانت. تشخیص نهایی ماهیت به نوع دعوا و رویه بستگی دارد.</p>';
+    h += '<div class="stack" data-form="claims"><div class="two"><label class="field"><span>ماهیت</span><select id="cl-kind" data-k="kind">' + opts(KINDS) + '</select></label>' +
+      '<label class="field"><span>عنوان خواسته</span><input type="text" id="cl-title" data-k="title" list="cl-list" autocomplete="off"></label></div><datalist id="cl-list"></datalist>' +
+      '<div class="two" id="cl-fin"><label class="field"><span>موضوع خواسته</span><select id="cl-subject" data-k="subject">' + opts(SUBJ) + '</select></label>' + field('cl-val', 'ارزش خواسته - تومان', '', 'data-k="value" class="ltr" inputmode="numeric"') + '</div>' +
+      '<div id="cl-prop" hidden class="stack"><div class="two">' + field('cl-plaque', 'پلاک ثبتی', '', 'data-k="plaque" class="ltr"') + field('cl-area', 'مساحت - متر مربع', '', 'data-k="area" class="ltr" inputmode="numeric"') + '</div>' + field('cl-addr', 'آدرس ملک', '', 'data-k="addr"') + '<label class="field"><span>نوع سند</span><select id="cl-doc" data-k="doc">' + opts(DOCT) + '</select></label></div>' +
+      '<div class="btns"><button class="btn primary" data-act="add" data-l="claims">افزودن خواسته</button></div></div>';
+    if (c.claims.length) {
+      h += '<div>' + c.claims.map(function (x) {
+        var sub = [x.kind === 'مالی' ? x.subject : '', x.prop && x.prop.plaque && ('پلاک ' + x.prop.plaque), x.prop && x.prop.area && (fa(x.prop.area) + ' متر'), x.prop && x.prop.doc, x.prop && x.prop.addr].filter(Boolean).join(' - ');
+        return '<div class="item static"><span class="t">' + esc(x.title) + ' <span class="pill ' + (x.kind === 'مالی' ? 'acc' : '') + '">' + x.kind + '</span></span><button class="btn sm danger" data-act="rm" data-l="claims" data-id="' + x.id + '">حذف</button>' +
+          '<span class="s">' + (x.kind === 'مالی' && x.value ? money(x.value) + ' تومان' : '') + (sub ? (x.kind === 'مالی' && x.value ? ' - ' : '') + esc(sub) : '') + '</span></div>';
+      }).join('') + '</div>';
+    }
+    if (any) h += '<dl class="kv"><dt class="tot">جمع ارزش خواسته‌های مالی</dt><dd class="tot">' + money(tot) + ' تومان</dd></dl>';
+    return h + '</section>';
+  }
+  function updateClaimForm() {
+    var k = document.getElementById('cl-kind'); if (!k) return;
+    var fin = k.value === 'مالی', sj = document.getElementById('cl-subject').value;
+    document.getElementById('cl-fin').hidden = !fin;
+    document.getElementById('cl-prop').hidden = !(fin && PROPS.indexOf(sj) >= 0);
+    document.getElementById('cl-list').innerHTML = (CLAIMS[k.value] || []).map(function (o) { return '<option value="' + esc(o) + '">'; }).join('');
+  }
+  var SUBS = [['info', 'اطلاعات'], ['notes', 'اظهارات'], ['docs', 'مدارک'], ['dl', 'مهلت‌ها'], ['sess', 'جلسات'], ['money', 'مالی']];
+  function viewCase(c) {
+    if (ui.sub === 'print') return viewSummary(c);
+    var h = '<div class="top"><button class="btn sm" data-act="back">بازگشت</button><button class="btn sm" data-act="sumview">خلاصه چاپی</button></div><h1 style="margin-bottom:10px">' + esc(c.title || 'پرونده جدید') + '</h1><div class="stack">';
+    h += '<div class="sub" role="tablist">' + SUBS.map(function (s) { return '<button role="tab" aria-selected="' + (ui.sub === s[0]) + '" data-act="sub" data-s="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</div>';
+    if (ui.sub === 'info') {
+      h += '<section class="card stack">' + field('f-title', 'نام موکل', c.title, 'data-f="title"') +
+        '<div class="two">' + field('f-phone', 'تلفن موکل', c.phone, 'data-f="phone" class="ltr" inputmode="tel"') + field('f-opp', 'طرف مقابل', c.opponent, 'data-f="opponent"') + '</div>' + '<div class="btns" id="call-links">' + callLinks(c.phone) + '</div>' +
+        '<div class="two">' + field('f-no', 'شماره پرونده', c.caseNo, 'data-f="caseNo"') + field('f-arch', 'شماره بایگانی', c.archiveNo, 'data-f="archiveNo"') + '</div>' +
+        field('f-court', 'مرجع و شعبه', c.court, 'data-f="court"') +
+        '<div class="two"><label class="field"><span>وضعیت</span><select id="f-status" data-f="status">' + opts(STATUS, c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" class="ltr" inputmode="numeric"') + '</div></section>';
+      h += claimsCardHtml(c) + appealCardHtml(c);
+      h += '<section class="card stack"><h2 style="margin:0">پذیرش موکل</h2>' +
+        ['facts|شرح واقعه به بیان موکل', 'wants|خواسته و هدف موکل', 'sensitive|نکات حساس یا خطرناک پرونده', 'opp|اطلاعات طرف مقابل'].map(function (s) { var p = s.split('|'); return '<label class="field"><span>' + p[1] + '</span><textarea id="in-' + p[0] + '" data-in="' + p[0] + '">' + esc(c.intake[p[0]]) + '</textarea></label>'; }).join('') + '</section>';
+      h += '<div class="btns">' + (ui.confirm === 'del' ? '<button class="btn danger" data-act="delcase">تأیید حذف پرونده و همه اطلاعات آن</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn danger" data-act="askdel">حذف پرونده</button>') + '</div>';
+    }
+    if (ui.sub === 'notes') {
+      h += '<section class="card"><h2>ثبت اظهارات یا یادداشت</h2><div class="stack" data-form="notes"><div class="two"><label class="field"><span>نوع</span><select id="n-kind" data-k="kind">' + opts(NOTEK) + '</select></label>' + field('n-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + '</div><label class="field"><span>متن</span><textarea id="n-text" data-k="text"></textarea></label><div class="btns"><button class="btn primary" data-act="add" data-l="notes">ثبت</button></div></div></section>';
+      h += '<section class="card"><h2>سابقه</h2>' + (c.notes.length ? c.notes.slice().sort(function (a, b) { return b.date - a.date; }).map(function (n) { return '<div class="item static"><span class="t">' + esc(n.kind) + ' - ' + dstr(n.date) + '</span><button class="btn sm danger" data-act="rm" data-l="notes" data-id="' + n.id + '">حذف</button><span class="s" style="white-space:pre-wrap;color:var(--ink)">' + esc(n.text) + '</span></div>'; }).join('') : '<div class="empty">چیزی ثبت نشده است.</div>') + '</section>';
+    }
+    if (ui.sub === 'docs') {
+      h += '<section class="card"><h2>افزودن مدرک</h2><div class="stack" data-form="docs">' + field('d-name', 'عنوان مدرک', '', 'data-k="name"') + '<div class="two"><label class="field"><span>نوع</span><select id="d-kind" data-k="kind">' + opts(DOCK) + '</select></label><label class="field"><span>وضعیت</span><select id="d-st" data-k="status">' + opts(DOCS) + '</select></label></div>' + field('d-where', 'محل نگهداری', '', 'data-k="where"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="docs">افزودن</button></div></div><p class="muted" style="margin-bottom:0">فقط فهرست مدارک ثبت می‌شود، نه خود فایل‌ها.</p></section>';
+      h += '<section class="card"><h2>فهرست مدارک</h2>' + (c.docs.length ? c.docs.map(function (d) { return '<div class="item static"><span class="t">' + esc(d.name) + '</span><button class="btn sm danger" data-act="rm" data-l="docs" data-id="' + d.id + '">حذف</button><span class="s">' + esc(d.kind) + (d.where ? ' - ' + esc(d.where) : '') + '</span><label class="field" style="grid-column:1/-1"><select id="ds-' + d.id + '" data-docst="' + d.id + '" aria-label="وضعیت مدرک">' + opts(DOCS, d.status) + '</select></label></div>'; }).join('') : '<div class="empty">مدرکی ثبت نشده است.</div>') + '</section>';
+    }
+    if (ui.sub === 'dl') {
+      h += '<section class="card"><h2>مهلت جدید</h2>' + dlFormHtml('cd', false) + '</section>';
+      h += '<section class="card"><h2>مهلت‌های این پرونده</h2>' + (c.deadlines.length ? c.deadlines.slice().sort(function (a, b) { return a.end - b.end; }).map(function (d) {
+        return '<div class="item static"><span class="t" style="' + (d.done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' + esc(d.title) + '</span>' + (d.done ? '<span class="pill">انجام شد</span>' : pill(d.end)) +
+          '<span class="s">پایان ' + dstr(d.end) + ' ' + D.WN[D.weekday(d.end)] + ' - مبدأ ' + dstr(d.start) + (d.ref ? ' - ' + esc(d.ref) : '') + (d.note ? '<br>' + esc(d.note) : '') + '</span><span class="btns" style="grid-column:1/-1"><button class="btn sm" data-act="done" data-id="' + d.id + '">' + (d.done ? 'بازگشایی' : 'انجام شد') + '</button><button class="btn sm danger" data-act="rm" data-l="deadlines" data-id="' + d.id + '">حذف</button></span></div>';
+      }).join('') : '<div class="empty">مهلتی ثبت نشده است.</div>') + '</section>';
+    }
+    if (ui.sub === 'sess') {
+      h += '<section class="card"><h2>جلسه جدید</h2><div class="stack" data-form="sessions"><div class="two">' + field('s-date', 'تاریخ جلسه', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('s-time', 'ساعت', '', 'data-k="time" class="ltr" inputmode="numeric" placeholder="۰۹:۳۰"') + '</div>' + field('s-place', 'مرجع و شعبه', c.court, 'data-k="place"') + field('s-note', 'موضوع جلسه', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="sessions">ثبت جلسه</button></div></div></section>';
+      h += '<section class="card"><h2>جلسات این پرونده</h2>' + (c.sessions.length ? c.sessions.slice().sort(function (a, b) { return a.date - b.date; }).map(function (x) {
+        return '<div class="item static"><span class="t" style="' + (x.done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' + fa(D.long(x.date)) + (x.time ? ' - ساعت ' + fa(x.time) : '') + '</span>' + (x.done ? '<span class="pill">انجام شد</span>' : pill(x.date)) +
+          '<span class="s">' + esc([x.place, x.note].filter(Boolean).join(' - ')) + '</span><span class="btns" style="grid-column:1/-1"><button class="btn sm" data-act="done" data-l="sessions" data-id="' + x.id + '">' + (x.done ? 'بازگشایی' : 'برگزار شد') + '</button><button class="btn sm danger" data-act="rm" data-l="sessions" data-id="' + x.id + '">حذف</button></span></div>';
+      }).join('') : '<div class="empty">جلسه‌ای ثبت نشده است.</div>') + '</section>';
+    }
+    if (ui.sub === 'money') {
+      h += '<section class="card stack"><h2 style="margin:0">حق‌الوکاله - تومان</h2>' + field('m-fee', 'مبلغ توافق‌شده', c.fee ? money(c.fee) : '', 'data-fee class="ltr" inputmode="numeric"') +
+        '<dl class="kv" id="kv">' + kvHtml(c) + '</dl></section>';
+      h += '<section class="card"><h2>دریافتی جدید</h2><div class="stack" data-form="payments"><div class="two">' + field('p-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('p-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div>' + field('p-note', 'توضیح', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="payments">ثبت دریافتی</button></div></div>' +
+        c.payments.map(function (x) { return '<div class="item static"><span class="t">' + money(x.amount) + '</span><button class="btn sm danger" data-act="rm" data-l="payments" data-id="' + x.id + '">حذف</button><span class="s">' + dstr(x.date) + (x.note ? ' - ' + esc(x.note) : '') + '</span></div>'; }).join('') + '</section>';
+      h += '<section class="card"><h2>هزینه جدید</h2><div class="stack" data-form="expenses"><div class="two">' + field('e-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('e-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div><div class="two">' + field('e-note', 'بابت', '', 'data-k="note"') + '<label class="field"><span>پرداخت‌کننده</span><select id="e-who" data-k="who"><option>وکیل</option><option>موکل</option></select></label></div><div class="btns"><button class="btn primary" data-act="add" data-l="expenses">ثبت هزینه</button></div></div>' +
+        c.expenses.map(function (x) { return '<div class="item static"><span class="t">' + money(x.amount) + ' - ' + esc(x.who) + '</span><button class="btn sm danger" data-act="rm" data-l="expenses" data-id="' + x.id + '">حذف</button><span class="s">' + dstr(x.date) + (x.note ? ' - ' + esc(x.note) : '') + '</span></div>'; }).join('') + '</section>';
+    }
+    return h + '</div>';
+  }
+  function viewMore() {
+    return '<div class="top"><h1>بیشتر</h1></div><div class="stack">' +
+      '<section class="card stack" style="text-align:center"><h2 style="margin:0">دفتر پرونده‌ها</h2><p style="margin:0;font-weight:700">ایده و طراحی: اصغر کریمی</p><p class="muted" style="margin:0">شماره پروانه ۴۲۶۱۳</p></section>' +
+      '<section class="card stack"><h2 style="margin:0">پشتیبان‌گیری</h2><p class="muted" style="margin:0">داده‌ها فقط روی همین دستگاه و همین مرورگر ذخیره می‌شوند. با پاک‌کردن اطلاعات مرورگر یا تعویض گوشی از بین می‌روند، پس هر چند وقت یک‌بار پشتیبان بگیرید.' + (DB.lastBackup ? ' آخرین پشتیبان: ' + fa(new Date(DB.lastBackup).toLocaleDateString('fa-IR')) + '.' : '') + '</p>' +
+      '<div class="btns"><button class="btn primary" data-act="export">گرفتن پشتیبان</button></div><textarea class="big" id="bk-out" readonly hidden aria-label="متن پشتیبان"></textarea></section>' +
+      '<section class="card stack"><h2 style="margin:0">بازیابی</h2><p class="muted" style="margin:0">فایل پشتیبان را انتخاب کنید یا متن آن را اینجا بچسبانید. بازیابی، اطلاعات فعلی را جایگزین می‌کند.</p><label class="field"><span>فایل پشتیبان</span><input type="file" id="bk-file" accept=".json,application/json"></label><label class="field"><span>یا متن پشتیبان</span><textarea class="big" id="bk-in"></textarea></label><div class="btns">' + (ui.confirm === 'imp' ? '<button class="btn danger" data-act="doimport">تأیید جایگزینی</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn" data-act="import">بازیابی از متن</button>') + '</div></section>' +
+      '<section class="card stack"><h2 style="margin:0">حریم خصوصی</h2><p class="muted" style="margin:0">اطلاعات موکلین جایی ارسال نمی‌شود. با این حال هر کس به این دستگاه یا فایل پشتیبان دسترسی داشته باشد آن‌ها را می‌بیند؛ از قفل گوشی استفاده کنید و فایل پشتیبان را امن نگه دارید.</p></section>' +
+      '<section class="card stack"><h2 style="margin:0">پاک‌کردن همه</h2><div class="btns">' + (ui.confirm === 'wipe' ? '<button class="btn danger" data-act="dowipe">تأیید - همه پرونده‌ها پاک شود</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn danger" data-act="wipe">پاک‌کردن همه اطلاعات</button>') + '</div></section>' +
+      '<p class="muted">مهلت‌ها با متن آ.د.م، آ.د.ک و قانون اجرای احکام مدنی تطبیق داده شده است. قانون صدور چک از منبع وب است. این برنامه جایگزین بررسی وکیل نیست.</p></div>';
+  }
+  function render() {
+    var c = ui.caseId && cById(ui.caseId), v;
+    if (ui.tab === 'cases' && c) v = viewCase(c);
+    else if (ui.tab === 'today') v = viewToday();
+    else if (ui.tab === 'cases') v = viewCases();
+    else if (ui.tab === 'calc') v = viewCalc();
+    else v = viewMore();
+    var tabs = [['today', 'امروز'], ['cases', 'پرونده‌ها'], ['calc', 'مهلت‌یاب'], ['more', 'بیشتر']];
+    app.innerHTML = '<div id="view">' + v + '</div><nav class="bar" aria-label="بخش‌ها"><div class="in">' + tabs.map(function (t) { return '<button data-act="tab" data-t="' + t[0] + '"' + (ui.tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div></nav>';
+    ['calc', 'cd'].forEach(updatePrev);
+    updateClaimForm();
+  }
+  function go(tab, caseId, sub) { ui.tab = tab; ui.caseId = caseId || null; if (sub) ui.sub = sub; ui.confirm = ''; render(); window.scrollTo(0, 0); }
+
+  /* ---------- رویدادها ---------- */
+  function formVals(l) { var root = app.querySelector('[data-form="' + l + '"]'), o = {}; root.querySelectorAll('[data-k]').forEach(function (e) { o[e.getAttribute('data-k')] = e.value; }); return o; }
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var a = b.getAttribute('data-act'), c = ui.caseId && cById(ui.caseId);
+    if (a === 'tab') go(b.getAttribute('data-t'));
+    else if (a === 'open') go('cases', b.getAttribute('data-id'), 'info');
+    else if (a === 'opendl') go('cases', b.getAttribute('data-id'), 'dl');
+    else if (a === 'sumview') { ui.sub = 'print'; render(); window.scrollTo(0, 0); }
+    else if (a === 'sumback') { ui.sub = 'info'; render(); window.scrollTo(0, 0); }
+    else if (a === 'doprint') { try { window.print(); } catch (e) { toast('از منوی مرورگر گزینه چاپ را بزنید'); } }
+    else if (a === 'copysum' && c) {
+      var txt = summaryText(c), ta = document.getElementById('sum-text');
+      var fb = function () { ta.hidden = false; ta.value = txt; ta.focus(); ta.select(); toast('متن را انتخاب و کپی کنید'); };
+      try { navigator.clipboard.writeText(txt).then(function () { toast('کپی شد'); }, fb); } catch (e2) { fb(); }
+    }
+    else if (a === 'opensess') go('cases', b.getAttribute('data-id'), 'sess');
+    else if (a === 'back') go('cases');
+    else if (a === 'sub') { ui.sub = b.getAttribute('data-s'); ui.confirm = ''; render(); }
+    else if (a === 'newcase') { var n = blankCase(); DB.cases.unshift(n); save(); go('cases', n.id, 'info'); }
+    else if (a === 'askdel') { ui.confirm = 'del'; render(); }
+    else if (a === 'cancel') { ui.confirm = ''; render(); }
+    else if (a === 'delcase') { DB.cases = DB.cases.filter(function (x) { return x.id !== ui.caseId; }); save(); toast('پرونده حذف شد'); go('cases'); }
+    else if (a === 'add' && c) {
+      var l = b.getAttribute('data-l'), v = formVals(l), dt = D.parse(v.date);
+      if (l === 'claims') {
+        if (!v.title.trim()) return toast('عنوان خواسته را بنویسید');
+        var fin = v.kind === 'مالی';
+        c.claims.push({ id: uid(), kind: v.kind, title: v.title.trim(), subject: fin ? v.subject : 'غیرمالی', value: fin ? parseNum(v.value) : 0, prop: (fin && PROPS.indexOf(v.subject) >= 0) ? { plaque: v.plaque.trim(), area: parseNum(v.area), addr: v.addr.trim(), doc: v.doc } : null });
+      }
+      if (l === 'sessions') { if (dt == null) return toast('تاریخ نامعتبر است'); c.sessions.push({ id: uid(), date: dt, time: v.time.trim(), place: v.place.trim(), note: v.note.trim(), done: false }); }
+      if (l === 'notes') { if (!v.text.trim()) return toast('متن را بنویسید'); if (dt == null) return toast('تاریخ نامعتبر است'); c.notes.push({ id: uid(), date: dt, kind: v.kind, text: v.text.trim() }); }
+      if (l === 'docs') { if (!v.name.trim()) return toast('عنوان مدرک را بنویسید'); c.docs.push({ id: uid(), name: v.name.trim(), kind: v.kind, status: v.status, where: v.where.trim() }); }
+      if (l === 'payments' || l === 'expenses') { var am = parseNum(v.amount); if (!am) return toast('مبلغ را بنویسید'); if (dt == null) return toast('تاریخ نامعتبر است'); c[l].push({ id: uid(), date: dt, amount: am, note: v.note.trim(), who: v.who }); }
+      save(); render(); toast('ثبت شد');
+    }
+    else if (a === 'rm' && c) { var ll = b.getAttribute('data-l'); c[ll] = c[ll].filter(function (x) { return x.id !== b.getAttribute('data-id'); }); save(); render(); }
+    else if (a === 'done' && c) { (c[b.getAttribute('data-l') || 'deadlines']).forEach(function (d) { if (d.id === b.getAttribute('data-id')) d.done = !d.done; }); save(); render(); }
+    else if (a === 'adddl') {
+      var p = b.getAttribute('data-p'), x = readDl(p); if (x.err) return toast(x.err);
+      var cid = p === 'calc' ? x.caseId : ui.caseId; if (!cid) return toast('برای ثبت، یک پرونده انتخاب کنید');
+      var tc = cById(cid); if (!tc) return;
+      tc.deadlines.push({ id: uid(), title: x.rule.custom ? (x.ctitle.trim() || 'مهلت دلخواه') : x.rule.t, ruleId: x.rule.id, start: x.start, end: x.r.end, ref: x.rule.ref, ver: x.rule.ver, note: x.note.trim(), done: false });
+      save(); toast('مهلت ثبت شد'); if (p === 'calc') render(); else render();
+    }
+    else if (a === 'export') {
+      DB.lastBackup = Date.now(); save();
+      var json = JSON.stringify(DB), ta = document.getElementById('bk-out'); ta.hidden = false; ta.value = json; ta.focus(); ta.select();
+      try { var u = URL.createObjectURL(new Blob([json], { type: 'application/json' })), an = document.createElement('a'); an.href = u; an.download = 'daftar-parvandeh-backup.json'; document.body.appendChild(an); an.click(); an.remove(); } catch (er) {}
+      try { navigator.clipboard.writeText(json).then(function () { toast('پشتیبان کپی شد و فایل ساخته شد'); }, function () { toast('متن پشتیبان را انتخاب و کپی کنید'); }); } catch (er2) { toast('متن پشتیبان را انتخاب و کپی کنید'); }
+    }
+    else if (a === 'import') { ui.confirm = 'imp'; var keep = document.getElementById('bk-in').value; render(); document.getElementById('bk-in').value = keep; }
+    else if (a === 'doimport') {
+      try { var o = JSON.parse(document.getElementById('bk-in').value); if (!o || !Array.isArray(o.cases)) throw 0; DB = o; normalize(); save(); ui.confirm = ''; toast('بازیابی شد'); render(); } catch (er3) { ui.confirm = ''; render(); toast('متن پشتیبان معتبر نیست'); }
+    }
+    else if (a === 'wipe') { ui.confirm = 'wipe'; render(); }
+    else if (a === 'dowipe') { DB = { cases: [], lastBackup: 0 }; save(); ui.confirm = ''; toast('همه اطلاعات پاک شد'); render(); }
+  });
+  app.addEventListener('input', function (e) {
+    var el = e.target, c = ui.caseId && cById(ui.caseId);
+    if (el.id === 'q') { ui.q = el.value; document.getElementById('caseList').innerHTML = caseListHtml(); return; }
+    if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
+    else if (el.hasAttribute('data-in') && c) { c.intake[el.getAttribute('data-in')] = el.value; save(); }
+    else if (el.hasAttribute('data-fee') && c) { c.fee = parseNum(el.value); save(); var kv = document.getElementById('kv'); if (kv) kv.innerHTML = kvHtml(c); }
+    var f = el.closest('[data-form]'); if (f && (f.getAttribute('data-form') === 'calc' || f.getAttribute('data-form') === 'cd')) updatePrev(f.getAttribute('data-form'));
+  });
+  app.addEventListener('change', function (e) {
+    var el = e.target, c = ui.caseId && cById(ui.caseId);
+    if (el.id === 'f-status' && c) { c.status = el.value; save(); }
+    else if (el.hasAttribute('data-docst') && c) { c.docs.forEach(function (d) { if (d.id === el.getAttribute('data-docst')) d.status = el.value; }); save(); }
+    else if (el.id === 'sum-money') { ui.sumMoney = el.checked; render(); }
+    else if (el.id === 'sum-notes') { ui.sumNotes = el.checked; render(); }
+    else if (el.id === 'cl-kind' || el.id === 'cl-subject') { updateClaimForm(); }
+    else if (el.id === 'bk-file' && el.files[0]) { var fr = new FileReader(); fr.onload = function () { document.getElementById('bk-in').value = String(fr.result); toast('فایل خوانده شد - دکمه بازیابی را بزنید'); }; fr.readAsText(el.files[0]); }
+    var f = el.closest('[data-form]'); if (f && (f.getAttribute('data-form') === 'calc' || f.getAttribute('data-form') === 'cd')) updatePrev(f.getAttribute('data-form'));
+  });
+  app.addEventListener('focusout', function (e) { var el = e.target; if (el.hasAttribute && el.hasAttribute('data-fee')) { var c = ui.caseId && cById(ui.caseId); if (c) el.value = c.fee ? money(c.fee) : ''; } });
+  app.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('item') && e.target.hasAttribute('data-act')) { e.preventDefault(); e.target.click(); } });
+  render();
+})();
+</script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>
