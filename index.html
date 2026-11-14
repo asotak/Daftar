@@ -8,7 +8,6 @@
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>دفتر پرونده‌ها</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap">
 <style>
 /* Layout: تک‌ستونه برای گوشی، نوار پایین برای چهار بخش اصلی؛ روی صفحه بزرگ ستون وسط */
@@ -215,8 +214,8 @@ body { margin: 0; }
     { id: 'crim_tajdid', g: 'کیفری', t: 'تجدیدنظر یا فرجام', from: 'ابلاغ رأی، یا انقضای مهلت واخواهی', inn: { d: 20 }, out: { m: 2 }, ref: 'ماده ۴۳۱ آ.د.ک', ver: VER_OFFICIAL, note: 'درخواست دیرتر با عذر موجه - ماده ۴۳۲ و ۱۷۸.' },
     { id: 'crim_ostan', g: 'کیفری', t: 'واخواهی از رأی تجدیدنظر استان', from: 'ابلاغ واقعی به متهم یا وکیل', inn: { d: 20 }, ref: 'ماده ۴۶۱ آ.د.ک', ver: VER_OFFICIAL, note: 'فقط وقتی رأی محکومیت است و متهم یا وکیل در هیچ‌یک از مراحل حاضر نبوده و لایحه نداده. رأی این مرحله قطعی است.' },
     { id: 'exec', g: 'اجرا', t: 'مهلت اجرای مفاد اجراییه', from: 'ابلاغ اجراییه به محکوم‌علیه', inn: { d: 10 }, ref: 'ماده ۳۴ قانون اجرای احکام مدنی', ver: VER_OFFICIAL, note: 'پایان مهلت یعنی محکوم‌علیه باید حکم را اجرا کند یا ترتیب پرداخت بدهد.' },
-    { id: 'chq_present', g: 'چک', t: 'مهلت ارائه چک به بانک', from: 'تاریخ صدور چک', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع وب - متن قانون صدور چک در فایل‌ها نبود', note: 'ماه شمسی حساب شده؛ اگر مرجع ۳۰ روزه حساب کند ممکن است چند روز فرق کند.' },
-    { id: 'chq_compl', g: 'چک', t: 'مهلت شکایت کیفری چک', from: 'تاریخ گواهی عدم پرداخت', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع وب - متن قانون صدور چک در فایل‌ها نبود', note: 'ماه شمسی حساب شده؛ احتیاطاً چند روز زودتر اقدام کنید.' },
+    { id: 'chq_present', g: 'چک', t: 'مهلت ارائه چک به بانک', from: 'تاریخ صدور چک', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع آنلاین؛ با متن رسمی تطبیق نشده است', note: 'ماه شمسی حساب شده؛ اگر مرجع ۳۰ روزه حساب کند ممکن است چند روز فرق کند.' },
+    { id: 'chq_compl', g: 'چک', t: 'مهلت شکایت کیفری چک', from: 'تاریخ گواهی عدم پرداخت', inn: { m: 6 }, ref: 'ماده ۱۱ قانون صدور چک', ver: 'تطبیق با منبع آنلاین؛ با متن رسمی تطبیق نشده است', note: 'ماه شمسی حساب شده؛ احتیاطاً چند روز زودتر اقدام کنید.' },
     { id: 'custom', g: 'دلخواه', t: 'مهلت دلخواه', from: 'تاریخ شروع', ref: '', ver: '', custom: true }
   ];
   var RULE = function (id) { for (var i = 0; i < RULES.length; i++) if (RULES[i].id === id) return RULES[i]; return RULES[RULES.length - 1]; };
@@ -430,7 +429,7 @@ body { margin: 0; }
       else h += '<p class="muted" style="margin:0">نوع جرم یا مجازات را انتخاب کنید تا قابلیت اعتراض نشان داده شود.</p>';
       h += '<div class="item static"><span class="t">رأی غیابی</span><span class="s">در تمام جرایم، به جز جرایمی که فقط جنبه حق‌اللهی دارند، اگر متهم یا وکیل او در هیچ جلسه‌ای حاضر نشود و لایحه ندهد، رأی غیابی است. رأی محکومیت ظرف ۲۰ روز از ابلاغ واقعی، و برای مقیم خارج ۲ ماه، در همان دادگاه قابل واخواهی است. اگر ابلاغ واقعی نشده، ۲۰ روز از تاریخ اطلاع - ماده ۴۰۶.</span></div>';
       h += '<div class="btns">' + dlBtn('crim_wakh', 'ثبت مهلت واخواهی') + dlBtn('crim_tajdid', 'ثبت مهلت تجدیدنظر یا فرجام') + '</div>';
-      return h + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز و برای مقیم خارج ۲ ماه از ابلاغ رأی یا انقضای مهلت واخواهی است - ماده ۴۳۱. در مجازات‌های جایگزین حبس، معیار مجازات قانونی اولیه است - تبصره ۱ ماده ۴۲۷. این راهنما بر اساس متن آ.د.ک ارسالی شماست؛ اصلاحات بعدی، قرارها و جرایم خاص را جداگانه بررسی کنید.</p></section>';
+      return h + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز و برای مقیم خارج ۲ ماه از ابلاغ رأی یا انقضای مهلت واخواهی است - ماده ۴۳۱. در مجازات‌های جایگزین حبس، معیار مجازات قانونی اولیه است - تبصره ۱ ماده ۴۲۷. مبنای این راهنما متن آ.د.ک است؛ اصلاحات بعدی، قرارها و جرایم خاص جداگانه بررسی شود.</p></section>';
     }
     var any = false, fany = false;
     var rows = c.claims.map(function (x) {
@@ -443,7 +442,7 @@ body { margin: 0; }
     h2 += rows;
     h2 += '<div class="item static"><span class="t">اگر رأی غیابی است</span><span class="s">رأی وقتی غیابی است که خوانده یا وکیل او در هیچ جلسه‌ای حاضر نشده و لایحه نداده، یا اخطاریه ابلاغ واقعی نشده باشد - ماده ۳۰۳. واخواهی در همان دادگاه، ۲۰ روز از ابلاغ واقعی و برای مقیم خارج ۲ ماه است - ماده ۳۰۶. با عذر موجه مندرج در همان ماده، بعد از مهلت هم ممکن است. بدون عذر، فقط تجدیدنظر طبق مقررات آن مرحله ممکن است - تبصره ۳. اگر ابلاغ واقعی نشده و محکوم‌علیه مدعی بی‌اطلاعی باشد، می‌تواند واخواهی کند - ماده ۳۰۶.</span></div>';
     h2 += '<div class="btns">' + dlBtn('civ_wakh', 'ثبت مهلت واخواهی') + (any || !c.claims.length ? dlBtn('civ_tajdid', 'ثبت مهلت تجدیدنظر') : '') + (fany ? dlBtn('civ_farjam', 'ثبت مهلت فرجام') : '') + '</div>';
-    return h2 + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز از ابلاغ است و برای مقیم خارج از کشور ۲ ماه - مواد ۳۳۶ و ۳۹۷. این راهنما فقط برای دعاوی مدنی و بر اساس متن آ.د.م است که فرستادید؛ قرارها، متفرعات دعوا، چند خواسته در یک دادخواست و اصلاحات تازه را جداگانه بررسی کنید. نصاب تجدیدنظر در بخش «بیشتر» قابل تغییر است.</p></section>';
+    return h2 + '<p class="muted" style="margin:8px 0 0">مهلت تجدیدنظر و فرجام ۲۰ روز از ابلاغ است و برای مقیم خارج از کشور ۲ ماه - مواد ۳۳۶ و ۳۹۷. مبنای این راهنما متن آ.د.م است و فقط دعاوی مدنی را در بر می‌گیرد؛ قرارها، متفرعات دعوا، چند خواسته در یک دادخواست و اصلاحات تازه جداگانه بررسی شود. نصاب تجدیدنظر در بخش «بیشتر» قابل تغییر است.</p></section>';
   }
   function summaryData(c) {
     var S = [], t = today(), put = function (h, l) { l = l.filter(function (x) { return x[1] !== '' && x[1] != null; }); if (l.length) S.push({ h: h, l: l }); };
@@ -564,10 +563,10 @@ body { margin: 0; }
       '<section class="card stack"><h2 style="margin:0">پشتیبان‌گیری</h2><p class="muted" style="margin:0">داده‌ها فقط روی همین دستگاه و همین مرورگر ذخیره می‌شوند. با پاک‌کردن اطلاعات مرورگر یا تعویض گوشی از بین می‌روند، پس هر چند وقت یک‌بار پشتیبان بگیرید.' + (DB.lastBackup ? ' آخرین پشتیبان: ' + fa(new Date(DB.lastBackup).toLocaleDateString('fa-IR')) + '.' : '') + '</p>' +
       '<div class="btns"><button class="btn primary" data-act="export">گرفتن پشتیبان</button></div><textarea class="big" id="bk-out" readonly hidden aria-label="متن پشتیبان"></textarea></section>' +
       '<section class="card stack"><h2 style="margin:0">بازیابی</h2><p class="muted" style="margin:0">فایل پشتیبان را انتخاب کنید یا متن آن را اینجا بچسبانید. بازیابی، اطلاعات فعلی را جایگزین می‌کند.</p><label class="field"><span>فایل پشتیبان</span><input type="file" id="bk-file" accept=".json,application/json"></label><label class="field"><span>یا متن پشتیبان</span><textarea class="big" id="bk-in"></textarea></label><div class="btns">' + (ui.confirm === 'imp' ? '<button class="btn danger" data-act="doimport">تأیید جایگزینی</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn" data-act="import">بازیابی از متن</button>') + '</div></section>' +
-      '<section class="card stack"><h2 style="margin:0">نصاب تجدیدنظر</h2><p class="muted" style="margin:0">طبق ماده ۳۳۱ در متن آ.د.م ارسالی شما، دعاوی مالی با خواسته بیش از سه میلیون ریال، یعنی ۳۰۰٬۰۰۰ تومان، قابل تجدیدنظر است. اگر این مبلغ در قانون جاری تغییر کرده، اینجا اصلاح کنید تا راهنمای اعتراض بر همان اساس کار کند.</p>' + field('lim', 'نصاب - تومان', money(DB.limit), 'data-limit class="ltr" inputmode="numeric"') + '</section>' +
+      '<section class="card stack"><h2 style="margin:0">نصاب تجدیدنظر</h2><p class="muted" style="margin:0">طبق متن ماده ۳۳۱ آ.د.م، دعاوی مالی با خواسته بیش از سه میلیون ریال، یعنی ۳۰۰٬۰۰۰ تومان، قابل تجدیدنظر است. اگر این مبلغ در قانون جاری تغییر کرده، اینجا اصلاح شود تا راهنمای اعتراض بر همان اساس کار کند.</p>' + field('lim', 'نصاب - تومان', money(DB.limit), 'data-limit class="ltr" inputmode="numeric"') + '</section>' +
       '<section class="card stack"><h2 style="margin:0">حریم خصوصی</h2><p class="muted" style="margin:0">اطلاعات موکلین جایی ارسال نمی‌شود. با این حال هر کس به این دستگاه یا فایل پشتیبان دسترسی داشته باشد آن‌ها را می‌بیند؛ از قفل گوشی استفاده کنید و فایل پشتیبان را امن نگه دارید.</p></section>' +
       '<section class="card stack"><h2 style="margin:0">پاک‌کردن همه</h2><div class="btns">' + (ui.confirm === 'wipe' ? '<button class="btn danger" data-act="dowipe">تأیید - همه پرونده‌ها پاک شود</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn danger" data-act="wipe">پاک‌کردن همه اطلاعات</button>') + '</div></section>' +
-      '<p class="muted">مهلت‌ها با متن آ.د.م، آ.د.ک و قانون اجرای احکام مدنی تطبیق داده شده است. قانون صدور چک از منبع وب است. این برنامه جایگزین بررسی وکیل نیست.</p></div>';
+      '<p class="muted">مهلت‌ها با متن آ.د.م، آ.د.ک و قانون اجرای احکام مدنی تطبیق داده شده است. مهلت‌های قانون صدور چک از منبع آنلاین است. این برنامه جایگزین بررسی وکیل نیست.</p></div>';
   }
   function render() {
     var c = ui.caseId && cById(ui.caseId), v;
