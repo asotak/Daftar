@@ -335,7 +335,7 @@ body { margin: 0; }
     var h = '<div class="stack" data-form="' + p + '">';
     if (withCase) h += '<label class="field"><span>پرونده</span><select id="' + p + '-case" data-k="case"><option value="">بدون ثبت در پرونده - فقط محاسبه</option>' + DB.cases.map(function (c) { return '<option value="' + c.id + '">' + esc(c.title || 'بدون نام') + '</option>'; }).join('') + '</select></label>';
     h += '<div class="two"><label class="field"><span>نوع مهلت</span><select id="' + p + '-rule" data-k="rule">' + g + '</select></label>' +
-      '<label class="field"><span id="' + p + '-fromlbl">تاریخ</span><input type="text" id="' + p + '-start" data-k="start" class="ltr" inputmode="numeric" value="' + dstr(today()) + '" autocomplete="off"></label></div>' +
+      '<label class="field"><span id="' + p + '-fromlbl">تاریخ</span><input type="text" id="' + p + '-start" data-k="start" data-date class="ltr" inputmode="decimal" value="' + dstr(today()) + '" autocomplete="off"></label></div>' +
       '<div class="two"><label class="field" id="' + p + '-reswrap"><span>محل اقامت</span><select id="' + p + '-res" data-k="res"><option value="in">ساکن ایران</option><option value="out">ساکن خارج از کشور</option></select></label>' +
       '<div id="' + p + '-cust" hidden class="two" style="grid-column:1/-1"><label class="field"><span>عنوان</span><input type="text" id="' + p + '-ctitle" data-k="ctitle" autocomplete="off"></label><label class="field"><span>تعداد روز</span><input type="text" id="' + p + '-cdays" data-k="cdays" inputmode="numeric" class="ltr" value="' + fa(20) + '" autocomplete="off"></label></div></div>' +
       '<div id="' + p + '-prev"></div>' +
@@ -463,14 +463,14 @@ body { margin: 0; }
         '<div class="two">' + field('f-phone', 'تلفن موکل', c.phone, 'data-f="phone" class="ltr" inputmode="tel"') + field('f-opp', 'طرف مقابل', c.opponent, 'data-f="opponent"') + '</div>' + '<div class="btns" id="call-links">' + callLinks(c.phone) + '</div>' +
         '<div class="two">' + field('f-no', 'شماره پرونده', c.caseNo, 'data-f="caseNo"') + field('f-arch', 'شماره بایگانی', c.archiveNo, 'data-f="archiveNo"') + '</div>' +
         field('f-court', 'مرجع و شعبه', c.court, 'data-f="court"') +
-        '<div class="two"><label class="field"><span>وضعیت</span><select id="f-status" data-f="status">' + opts(STATUS, c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" class="ltr" inputmode="numeric"') + '</div></section>';
+        '<div class="two"><label class="field"><span>وضعیت</span><select id="f-status" data-f="status">' + opts(STATUS, c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + '</div></section>';
       h += claimsCardHtml(c) + appealCardHtml(c);
       h += '<section class="card stack"><h2 style="margin:0">پذیرش موکل</h2>' +
         ['facts|شرح واقعه به بیان موکل', 'wants|خواسته و هدف موکل', 'sensitive|نکات حساس یا خطرناک پرونده', 'opp|اطلاعات طرف مقابل'].map(function (s) { var p = s.split('|'); return '<label class="field"><span>' + p[1] + '</span><textarea id="in-' + p[0] + '" data-in="' + p[0] + '">' + esc(c.intake[p[0]]) + '</textarea></label>'; }).join('') + '</section>';
       h += '<div class="btns">' + (ui.confirm === 'del' ? '<button class="btn danger" data-act="delcase">تأیید حذف پرونده و همه اطلاعات آن</button><button class="btn" data-act="cancel">انصراف</button>' : '<button class="btn danger" data-act="askdel">حذف پرونده</button>') + '</div>';
     }
     if (ui.sub === 'notes') {
-      h += '<section class="card"><h2>ثبت اظهارات یا یادداشت</h2><div class="stack" data-form="notes"><div class="two"><label class="field"><span>نوع</span><select id="n-kind" data-k="kind">' + opts(NOTEK) + '</select></label>' + field('n-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + '</div><label class="field"><span>متن</span><textarea id="n-text" data-k="text"></textarea></label><div class="btns"><button class="btn primary" data-act="add" data-l="notes">ثبت</button></div></div></section>';
+      h += '<section class="card"><h2>ثبت اظهارات یا یادداشت</h2><div class="stack" data-form="notes"><div class="two"><label class="field"><span>نوع</span><select id="n-kind" data-k="kind">' + opts(NOTEK) + '</select></label>' + field('n-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + '</div><label class="field"><span>متن</span><textarea id="n-text" data-k="text"></textarea></label><div class="btns"><button class="btn primary" data-act="add" data-l="notes">ثبت</button></div></div></section>';
       h += '<section class="card"><h2>سابقه</h2>' + (c.notes.length ? c.notes.slice().sort(function (a, b) { return b.date - a.date; }).map(function (n) { return '<div class="item static"><span class="t">' + esc(n.kind) + ' - ' + dstr(n.date) + '</span><button class="btn sm danger" data-act="rm" data-l="notes" data-id="' + n.id + '">حذف</button><span class="s" style="white-space:pre-wrap;color:var(--ink)">' + esc(n.text) + '</span></div>'; }).join('') : '<div class="empty">چیزی ثبت نشده است.</div>') + '</section>';
     }
     if (ui.sub === 'docs') {
@@ -485,7 +485,7 @@ body { margin: 0; }
       }).join('') : '<div class="empty">مهلتی ثبت نشده است.</div>') + '</section>';
     }
     if (ui.sub === 'sess') {
-      h += '<section class="card"><h2>جلسه جدید</h2><div class="stack" data-form="sessions"><div class="two">' + field('s-date', 'تاریخ جلسه', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('s-time', 'ساعت', '', 'data-k="time" class="ltr" inputmode="numeric" placeholder="۰۹:۳۰"') + '</div>' + field('s-place', 'مرجع و شعبه', c.court, 'data-k="place"') + field('s-note', 'موضوع جلسه', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="sessions">ثبت جلسه</button></div></div></section>';
+      h += '<section class="card"><h2>جلسه جدید</h2><div class="stack" data-form="sessions"><div class="two">' + field('s-date', 'تاریخ جلسه', fa(D.fmt(today())), 'data-k="date" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + field('s-time', 'ساعت', '', 'data-k="time" data-time class="ltr" inputmode="decimal" placeholder="۰۹:۳۰"') + '</div>' + field('s-place', 'مرجع و شعبه', c.court, 'data-k="place"') + field('s-note', 'موضوع جلسه', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="sessions">ثبت جلسه</button></div></div></section>';
       h += '<section class="card"><h2>جلسات این پرونده</h2>' + (c.sessions.length ? c.sessions.slice().sort(function (a, b) { return a.date - b.date; }).map(function (x) {
         return '<div class="item static"><span class="t" style="' + (x.done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' + fa(D.long(x.date)) + (x.time ? ' - ساعت ' + fa(x.time) : '') + '</span>' + (x.done ? '<span class="pill">انجام شد</span>' : pill(x.date)) +
           '<span class="s">' + esc([x.place, x.note].filter(Boolean).join(' - ')) + '</span><span class="btns" style="grid-column:1/-1"><button class="btn sm" data-act="done" data-l="sessions" data-id="' + x.id + '">' + (x.done ? 'بازگشایی' : 'برگزار شد') + '</button><button class="btn sm danger" data-act="rm" data-l="sessions" data-id="' + x.id + '">حذف</button></span></div>';
@@ -494,9 +494,9 @@ body { margin: 0; }
     if (ui.sub === 'money') {
       h += '<section class="card stack"><h2 style="margin:0">حق‌الوکاله - تومان</h2>' + field('m-fee', 'مبلغ توافق‌شده', c.fee ? money(c.fee) : '', 'data-fee class="ltr" inputmode="numeric"') +
         '<dl class="kv" id="kv">' + kvHtml(c) + '</dl></section>';
-      h += '<section class="card"><h2>دریافتی جدید</h2><div class="stack" data-form="payments"><div class="two">' + field('p-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('p-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div>' + field('p-note', 'توضیح', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="payments">ثبت دریافتی</button></div></div>' +
+      h += '<section class="card"><h2>دریافتی جدید</h2><div class="stack" data-form="payments"><div class="two">' + field('p-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + field('p-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div>' + field('p-note', 'توضیح', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="payments">ثبت دریافتی</button></div></div>' +
         c.payments.map(function (x) { return '<div class="item static"><span class="t">' + money(x.amount) + '</span><button class="btn sm danger" data-act="rm" data-l="payments" data-id="' + x.id + '">حذف</button><span class="s">' + dstr(x.date) + (x.note ? ' - ' + esc(x.note) : '') + '</span></div>'; }).join('') + '</section>';
-      h += '<section class="card"><h2>هزینه جدید</h2><div class="stack" data-form="expenses"><div class="two">' + field('e-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" class="ltr" inputmode="numeric"') + field('e-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div><div class="two">' + field('e-note', 'بابت', '', 'data-k="note"') + '<label class="field"><span>پرداخت‌کننده</span><select id="e-who" data-k="who"><option>وکیل</option><option>موکل</option></select></label></div><div class="btns"><button class="btn primary" data-act="add" data-l="expenses">ثبت هزینه</button></div></div>' +
+      h += '<section class="card"><h2>هزینه جدید</h2><div class="stack" data-form="expenses"><div class="two">' + field('e-date', 'تاریخ', fa(D.fmt(today())), 'data-k="date" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + field('e-amt', 'مبلغ', '', 'data-k="amount" class="ltr" inputmode="numeric"') + '</div><div class="two">' + field('e-note', 'بابت', '', 'data-k="note"') + '<label class="field"><span>پرداخت‌کننده</span><select id="e-who" data-k="who"><option>وکیل</option><option>موکل</option></select></label></div><div class="btns"><button class="btn primary" data-act="add" data-l="expenses">ثبت هزینه</button></div></div>' +
         c.expenses.map(function (x) { return '<div class="item static"><span class="t">' + money(x.amount) + ' - ' + esc(x.who) + '</span><button class="btn sm danger" data-act="rm" data-l="expenses" data-id="' + x.id + '">حذف</button><span class="s">' + dstr(x.date) + (x.note ? ' - ' + esc(x.note) : '') + '</span></div>'; }).join('') + '</section>';
     }
     return h + '</div>';
@@ -583,8 +583,32 @@ body { margin: 0; }
     else if (a === 'wipe') { ui.confirm = 'wipe'; render(); }
     else if (a === 'dowipe') { DB = { cases: [], lastBackup: 0 }; save(); ui.confirm = ''; toast('همه اطلاعات پاک شد'); render(); }
   });
+
+  /* قالب‌بندی خودکار تاریخ و ساعت: فقط رقم بزنید، / و : خودکار می‌آید */
+  function faToEn(v) { return String(v).replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }).replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }); }
+  /* رقم‌های اضافه‌ی هر بخش به بخش بعدی می‌رود، مثلاً 1405/082 می‌شود 1405/08/2 */
+  function spill(parts, lim) {
+    for (var i = 0; i < lim.length; i++) {
+      if (parts[i] != null && parts[i].length > lim[i]) { var ex = parts[i].slice(lim[i]); parts[i] = parts[i].slice(0, lim[i]); if (i + 1 < lim.length) parts[i + 1] = ex + (parts[i + 1] || ''); }
+    }
+    return parts.slice(0, lim.length).join(lim.length === 3 ? '/' : ':');
+  }
+  function fmtDateInput(v) {
+    v = faToEn(v).replace(/[^0-9\/\-.\s]/g, '').replace(/[\-.\s]+/g, '/').replace(/\/+/g, '/');
+    if (v.indexOf('/') < 0) {
+      var d = v.slice(0, 8);
+      return d.length > 6 ? d.slice(0, 4) + '/' + d.slice(4, 6) + '/' + d.slice(6) : d.length > 4 ? d.slice(0, 4) + '/' + d.slice(4) : d;
+    }
+    return spill(v.split('/'), [4, 2, 2]);
+  }
+  function fmtTimeInput(v) {
+    v = faToEn(v).replace(/[^0-9:.\/\s]/g, '').replace(/[.\/\s]+/g, ':').replace(/:+/g, ':');
+    if (v.indexOf(':') < 0) { var d = v.slice(0, 4); return d.length > 2 ? d.slice(0, 2) + ':' + d.slice(2) : d; }
+    return spill(v.split(':'), [2, 2]);
+  }
   app.addEventListener('input', function (e) {
     var el = e.target, c = ui.caseId && cById(ui.caseId);
+    if (el.hasAttribute && (el.hasAttribute('data-date') || el.hasAttribute('data-time'))) { var nv = el.hasAttribute('data-date') ? fmtDateInput(el.value) : fmtTimeInput(el.value); if (nv !== el.value) el.value = nv; }
     if (el.id === 'q') { ui.q = el.value; document.getElementById('caseList').innerHTML = caseListHtml(); return; }
     if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
     else if (el.hasAttribute('data-in') && c) { c.intake[el.getAttribute('data-in')] = el.value; save(); }
