@@ -257,6 +257,15 @@ body { margin: 0; }
   var STCLS = { 'جدید': 'new', 'در جریان': 'run', 'مهلت نزدیک': 'near', 'رأی صادر شده': 'verdict', 'مختومه': 'done', 'راکد': 'idle' };
   var PROLES = ['خواهان / شاکی', 'خوانده / مشتکی‌عنه', 'وکیل خواهان / شاکی', 'وکیل خوانده / مشتکی‌عنه', 'ثالث / وارد ثالث', 'سایر افراد مرتبط'];
   var STATUS = ['مشاوره', 'تنظیم دادخواست', 'دادرسی نخستین', 'تجدیدنظر', 'فرجام', 'اجرای حکم', 'مختومه'];
+  var STATUS_K = ['مشاوره', 'تنظیم شکواییه', 'تحقیق در دادسرا', 'دادرسی نخستین', 'تجدیدنظر', 'فرجام', 'اجرای حکم', 'مختومه'];
+  var PROLES_K = ['شاکی', 'مشتکی‌عنه / متهم', 'مدعی خصوصی', 'وکیل شاکی', 'وکیل متهم', 'شاهد', 'مطلع', 'سایر افراد مرتبط'];
+  var statusList = function (c) { return c.branch === 'کیفری' ? STATUS_K : STATUS; };
+  var prolesFor = function (c) { return c.branch === 'کیفری' ? PROLES_K : PROLES; };
+  function fixStatus(c) {
+    if (c.branch === 'کیفری') { if (c.status === 'تنظیم دادخواست') c.status = 'تنظیم شکواییه'; }
+    else if (c.status === 'تنظیم شکواییه' || c.status === 'تحقیق در دادسرا') c.status = c.status === 'تنظیم شکواییه' ? 'تنظیم دادخواست' : 'دادرسی نخستین';
+  }
+  function syncCharge(c) { c.charge = c.charges.map(function (x) { return x.title; }).join('، '); }
   var DOCK = ['اصل', 'کپی', 'تصویر', 'رسید', 'سایر'];
   var DOCS = ['دریافت‌شده', 'ناقص', 'درخواست‌شده', 'ارائه‌شده به دادگاه'];
   var KINDS = ['مالی', 'غیرمالی'];
@@ -286,7 +295,7 @@ body { margin: 0; }
   var CLAIM_KIND_N = {};
   Object.keys(CLAIM_KIND).forEach(function (k) { CLAIM_KIND_N[normT(k)] = CLAIM_KIND[k]; });
   var DB = load();
-  function blankCase() { return { id: uid(), created: Date.now(), title: '', phone: '', opponent: '', caseNo: '', archiveNo: '', court: '', claims: [], sessions: [], status: STATUS[0], state: '', parties: [], events: [], log: [], touched: Date.now(), vakalat: '', intake: { facts: '', wants: '', sensitive: '', opp: '' }, notes: [], docs: [], deadlines: [], fee: 0, payments: [], expenses: [] }; }
+  function blankCase() { return { id: uid(), created: Date.now(), title: '', phone: '', opponent: '', caseNo: '', archiveNo: '', court: '', claims: [], sessions: [], status: STATUS[0], state: '', charges: [], parties: [], events: [], log: [], touched: Date.now(), vakalat: '', intake: { facts: '', wants: '', sensitive: '', opp: '' }, notes: [], docs: [], deadlines: [], fee: 0, payments: [], expenses: [] }; }
   function seed() {
     var c = blankCase(), t = today();
     c.sample = true; c.title = 'نمونه - آقای الف'; c.opponent = 'آقای ب'; c.caseNo = '۰۰۰۰۰۰۰'; c.archiveNo = '۰۰۰/۰۰'; c.court = 'شعبه نمونه دادگاه عمومی حقوقی'; c.claims.push({ id: uid(), kind: 'مالی', title: 'مطالبه وجه سفته', subject: 'وجه نقد', value: 500000000, prop: null }); c.sessions.push({ id: uid(), date: t + 9, time: '۰۹:۳۰', place: 'شعبه نمونه', note: 'جلسه نمونه', done: false }); c.status = STATUS[2];
@@ -303,6 +312,9 @@ body { margin: 0; }
       ['notes', 'docs', 'deadlines', 'payments', 'expenses', 'sessions'].forEach(function (k) { if (!Array.isArray(c[k])) c[k] = []; });
       if (!c.intake) c.intake = { facts: '', wants: '', sensitive: '', opp: '' };
       if (BRANCHES.indexOf(c.branch) < 0) c.branch = 'حقوقی';
+      if (!Array.isArray(c.charges)) c.charges = [];
+      if (!c.charges.length && c.charge) c.charges.push({ id: uid(), title: c.charge, note: '' });
+      fixStatus(c);
       ['parties', 'events', 'log'].forEach(function (k) { if (!Array.isArray(c[k])) c[k] = []; });
       if (typeof c.state !== 'string' || STATES.indexOf(c.state) < 0 || c.state === 'مهلت نزدیک') c.state = '';
       if (!c.touched) c.touched = c.created || Date.now();
@@ -370,7 +382,7 @@ body { margin: 0; }
   }
   var field = function (id, label, val, extra) { return '<label class="field"><span>' + label + '</span><input type="text" id="' + id + '" value="' + esc(val) + '" ' + (extra || '') + ' autocomplete="off"></label>'; };
   var opts = function (list, sel) { return list.map(function (o) { return '<option' + (o === sel ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join(''); };
-  var claimsText = function (c) { return c.claims.map(function (x) { return x.title; }).filter(Boolean).join('، '); };
+  var claimsText = function (c) { return (c.branch === 'کیفری' ? c.charges : c.claims).map(function (x) { return x.title; }).filter(Boolean).join('، '); };
   var allSessions = function () { var a = [], t = today(); DB.cases.forEach(function (c) { c.sessions.forEach(function (x) { if (!x.done && x.date >= t) a.push({ c: c, s: x }); }); }); a.sort(function (x, y) { return x.s.date - y.s.date; }); return a; };
   var allDeadlines = function () { var a = []; DB.cases.forEach(function (c) { c.deadlines.forEach(function (d) { if (!d.done) a.push({ c: c, d: d }); }); }); a.sort(function (x, y) { return x.d.end - y.d.end; }); return a; };
 
@@ -516,7 +528,6 @@ body { margin: 0; }
     if (c.branch === 'کیفری') {
       var cr = crimeFor(c.crime);
       var h = '<section class="card stack"><h2 style="margin:0">راهنمای اعتراض به رأی - کیفری</h2>';
-      h += '<label class="field"><span>عنوان اتهام</span><input type="text" id="f-charge" data-f="charge" list="ch-list" autocomplete="off" value="' + esc(c.charge) + '"></label><datalist id="ch-list">' + CHARGES.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>';
       h += '<label class="field"><span>نوع جرم یا مجازات رأی</span><select id="f-crime" data-f="crime">' + CRIME.map(function (o) { return '<option value="' + o[0] + '"' + (c.crime === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
       if (cr) h += '<div class="item static"><span class="s">تجدیدنظر: ' + cr.a + (cr.f ? '<br>فرجام: ' + cr.f : '') + '</span></div>';
       else h += '<p class="muted" style="margin:0">نوع جرم یا مجازات را انتخاب کنید تا قابلیت اعتراض نشان داده شود.</p>';
@@ -544,10 +555,11 @@ body { margin: 0; }
   }
   function summaryData(c) {
     var S = [], t = today(), put = function (h, l) { l = l.filter(function (x) { return x[1] !== '' && x[1] != null; }); if (l.length) S.push({ h: h, l: l }); };
-    put('مشخصات پرونده', [['موکل', c.title], ['طرف مقابل', c.opponent], ['شماره پرونده', c.caseNo], ['شماره بایگانی', c.archiveNo], ['مرجع و شعبه', c.court], ['مرجع رسیدگی', c.branch + (c.body ? ' - ' + c.body : '')], ['عنوان اتهام', c.charge], ['مرحله', c.status], ['وضعیت پرونده', stateOf(c)], ['تاریخ وکالت‌نامه', c.vakalat]]);
+    put('مشخصات پرونده', [['موکل', c.title], ['طرف مقابل', c.opponent], ['شماره پرونده', c.caseNo], ['شماره بایگانی', c.archiveNo], ['مرجع و شعبه', c.court], ['مرجع رسیدگی', c.branch + (c.body ? ' - ' + c.body : '')], ['مرحله', c.status], ['وضعیت پرونده', stateOf(c)], ['تاریخ وکالت‌نامه', c.vakalat]]);
     put('طرفین', c.parties.map(function (x) { return [x.name, x.role + (x.ours ? ' - موکل ما' : '')]; }));
     var tot = 0;
-    put('خواسته‌ها', c.claims.map(function (x) {
+    if (c.branch === 'کیفری') put('اتهامات', c.charges.map(function (x) { return [x.title, x.note]; }));
+    else put('خواسته‌ها', c.claims.map(function (x) {
       if (x.kind === 'مالی') tot += x.value || 0;
       var d = [x.kind, x.kind === 'مالی' ? x.subject : '', x.kind === 'مالی' && x.value ? money(x.value) + ' تومان' : '', x.prop && x.prop.plaque ? 'پلاک ' + x.prop.plaque : '', x.prop && x.prop.area ? fa(x.prop.area) + ' متر' : ''].filter(Boolean).join(' - ');
       return [x.title, d];
@@ -576,7 +588,15 @@ body { margin: 0; }
     summaryData(c).forEach(function (x) { out.push('', x.h); x.l.forEach(function (r) { out.push('- ' + r[0] + ': ' + r[1]); }); });
     return out.join('\n');
   }
+  function chargesCardHtml(c) {
+    var h = '<section class="card stack"><h2 style="margin:0">اتهامات</h2><p class="muted" style="margin:0">عنوان هر اتهام را جدا ثبت کنید. از فهرست پیشنهادی انتخاب کنید یا خودتان بنویسید.</p>';
+    h += '<div class="stack" data-form="charges"><label class="field"><span>عنوان اتهام</span><input type="text" id="ch-title" data-k="title" list="ch-list" autocomplete="off"></label><datalist id="ch-list">' + CHARGES.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist>' +
+      field('ch-note', 'توضیح - مثلاً ماده قانونی یا تاریخ وقوع', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="charges">افزودن اتهام</button></div></div>';
+    if (c.charges.length) h += '<div>' + c.charges.map(function (x) { return '<div class="item static"><span class="t">' + esc(x.title) + '</span><button class="btn sm danger" data-act="rm" data-l="charges" data-id="' + x.id + '">حذف</button>' + (x.note ? '<span class="s">' + esc(x.note) + '</span>' : '') + '</div>'; }).join('') + '</div>';
+    return h + '</section>';
+  }
   function claimsCardHtml(c) {
+    if (c.branch === 'کیفری') return chargesCardHtml(c);
     var tot = 0, any = false;
     c.claims.forEach(function (x) { if (x.kind === 'مالی') { tot += x.value || 0; any = true; } });
     var h = '<section class="card stack"><h2 style="margin:0">خواسته‌ها</h2><p class="muted" style="margin:0">هر خواسته را جدا ثبت کنید. مالی یعنی دارای ارزش پولی و غیرمالی مثل طلاق و حضانت. تشخیص نهایی ماهیت به نوع دعوا و رویه بستگی دارد.</p>';
@@ -643,7 +663,7 @@ body { margin: 0; }
         '<div class="two">' + field('f-no', 'شماره پرونده', c.caseNo, 'data-f="caseNo"') + field('f-arch', 'شماره بایگانی', c.archiveNo, 'data-f="archiveNo"') + '</div>' +
         field('f-court', 'مرجع و شعبه', c.court, 'data-f="court"') +
         '<div class="two"><label class="field"><span>مرجع رسیدگی</span><select id="f-branch" data-f="branch">' + opts(BRANCHES, c.branch) + '</select></label>' + (BODIES[c.branch] ? '<label class="field"><span>موضوع یا نوع مرجع</span><select id="f-body" data-f="body"><option value="">انتخاب کنید</option>' + opts(BODIES[c.branch], c.body) + '</select></label>' : '') + '</div>' +
-        '<div class="two"><label class="field"><span>مرحله پرونده</span><select id="f-status" data-f="status">' + opts(STATUS, c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + '</div>' +
+        '<div class="two"><label class="field"><span>مرحله پرونده</span><select id="f-status" data-f="status">' + opts(statusList(c), c.status) + '</select></label>' + field('f-vak', 'تاریخ وکالت‌نامه', c.vakalat, 'data-f="vakalat" data-date class="ltr" inputmode="decimal" placeholder="۱۴۰۵/۰۸/۲۲"') + '</div>' +
         '<label class="field"><span>وضعیت پرونده - اکنون: ' + stateOf(c) + '</span><select id="f-state"><option value="">خودکار</option>' + ['جدید', 'در جریان', 'رأی صادر شده', 'مختومه', 'راکد'].map(function (k) { return '<option' + (c.state === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></label><p class="muted" style="margin:0">در حالت خودکار، برنامه وضعیت را از روی مهلت‌ها، مرحله و فعالیت پرونده حساب می‌کند. اگر خودتان انتخاب کنید، همان می‌ماند.</p></section>';
       h += claimsCardHtml(c) + appealCardHtml(c);
       if (!hasInh(c)) h += '<div class="btns"><button class="btn" data-act="inhon">افزودن محاسبه ارث به این پرونده</button></div>';
@@ -662,7 +682,7 @@ body { margin: 0; }
             '<span class="btns" style="grid-column:1/-1"><button class="btn sm danger" data-act="rm" data-l="parties" data-id="' + x.id + '">حذف</button></span></div>';
         }).join('') + '</section>';
       h += '<section class="card"><h2>افزودن شخص</h2><div class="stack" data-form="parties">' + field('pt-name', 'نام و نام خانوادگی', '', 'data-k="name"') +
-        '<div class="two"><label class="field"><span>نقش</span><select id="pt-role" data-k="role">' + opts(PROLES) + '</select></label><label class="field"><span>از طرف موکل ما؟</span><select id="pt-ours" data-k="ours"><option>خیر</option><option>بله</option></select></label></div>' +
+        '<div class="two"><label class="field"><span>نقش</span><select id="pt-role" data-k="role">' + opts(prolesFor(c)) + '</select></label><label class="field"><span>از طرف موکل ما؟</span><select id="pt-ours" data-k="ours"><option>خیر</option><option>بله</option></select></label></div>' +
         '<div class="two">' + field('pt-phone', 'شماره تماس - اختیاری', '', 'data-k="phone" class="ltr" inputmode="tel"') + field('pt-nid', 'کد ملی - اختیاری', '', 'data-k="nid" class="ltr" inputmode="numeric"') + '</div>' +
         field('pt-note', 'توضیح کوتاه', '', 'data-k="note"') + '<div class="btns"><button class="btn primary" data-act="add" data-l="parties">افزودن</button></div></div><p class="muted" style="margin:8px 0 0">کد ملی در خلاصه چاپی نمی‌آید. اگر همین نام در پرونده دیگری هم باشد، زیر آن هشدار می‌دهد.</p></section>';
     }
@@ -781,6 +801,10 @@ body { margin: 0; }
         var fin = v.kind === 'مالی';
         c.claims.push({ id: uid(), kind: v.kind, title: v.title.trim(), subject: fin ? v.subject : 'غیرمالی', value: fin ? parseNum(v.value) : 0, prop: (fin && PROPS.indexOf(v.subject) >= 0) ? { plaque: v.plaque.trim(), area: parseNum(v.area), addr: v.addr.trim(), doc: v.doc } : null });
       }
+      if (l === 'charges') {
+        if (!v.title.trim()) return toast('عنوان اتهام را بنویسید');
+        c.charges.push({ id: uid(), title: v.title.trim(), note: (v.note || '').trim() }); syncCharge(c);
+      }
       if (l === 'parties') {
         if (!v.name.trim()) return toast('نام را بنویسید');
         var nidv = faToEn(v.nid || '').replace(/\D/g, ''); if (nidv && !nidOK(nidv)) return toast('کد ملی معتبر نیست - خالی بگذارید یا اصلاح کنید');
@@ -795,7 +819,7 @@ body { margin: 0; }
       if (l === 'payments' || l === 'expenses') { var am = parseNum(v.amount); if (!am) return toast('مبلغ را بنویسید'); if (dt == null) return toast('تاریخ نامعتبر است'); c[l].push({ id: uid(), date: dt, amount: am, note: v.note.trim(), who: v.who }); }
       save(); render(); toast('ثبت شد');
     }
-    else if (a === 'rm' && c) { var ll = b.getAttribute('data-l'); c[ll] = c[ll].filter(function (x) { return x.id !== b.getAttribute('data-id'); }); save(); render(); }
+    else if (a === 'rm' && c) { var ll = b.getAttribute('data-l'); c[ll] = c[ll].filter(function (x) { return x.id !== b.getAttribute('data-id'); }); if (ll === 'charges') syncCharge(c); save(); render(); }
     else if (a === 'done' && c) { (c[b.getAttribute('data-l') || 'deadlines']).forEach(function (d) { if (d.id === b.getAttribute('data-id')) d.done = !d.done; }); save(); render(); }
     else if (a === 'adddl') {
       var p = b.getAttribute('data-p'), x = readDl(p); if (x.err) return toast(x.err);
@@ -852,7 +876,7 @@ body { margin: 0; }
     if (el.hasAttribute('data-near')) { var nn = parseNum(el.value); if (nn > 0 && nn < 100) { DB.near = nn; save(); } return; }
     if (el.hasAttribute('data-idle')) { var ni = parseNum(el.value); if (ni > 0 && ni < 1000) { DB.idle = ni; save(); } return; }
     if (el.id === 'q') { ui.q = el.value; document.getElementById('caseList').innerHTML = caseListHtml(); return; }
-    if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-branch' || el.id === 'f-crime') { render(); return; } if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
+    if (el.hasAttribute('data-f') && c) { c[el.getAttribute('data-f')] = el.value; save(); if (el.id === 'f-branch') fixStatus(c); if (el.id === 'f-branch' || el.id === 'f-crime') { render(); return; } if (el.id === 'f-phone') { var cl = document.getElementById('call-links'); if (cl) cl.innerHTML = callLinks(el.value); } }
     else if (el.hasAttribute('data-in') && c) { c.intake[el.getAttribute('data-in')] = el.value; save(); }
     else if (el.hasAttribute('data-limit')) { var nl = parseNum(el.value); if (nl > 0) { DB.limit = nl; save(); } }
     else if (el.hasAttribute('data-fee') && c) { c.fee = parseNum(el.value); save(); var kv = document.getElementById('kv'); if (kv) kv.innerHTML = kvHtml(c); }
